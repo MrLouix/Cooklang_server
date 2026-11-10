@@ -87,9 +87,15 @@ def maintenant() -> str:
 
 
 def requete_fts(texte: str) -> str:
-    """Transforme une saisie libre en requête FTS5 sûre (préfixe sur chaque mot)."""
-    mots = ["".join(c for c in mot if c.isalnum()) for mot in texte.split()]
-    return " ".join(f'"{m}"*' for m in mots if m)
+    """Transforme une saisie libre en requête FTS5 sûre (préfixe sur chaque mot, « oe » = « œ »)."""
+    termes = []
+    for mot in texte.split():
+        mot = "".join(c for c in mot if c.isalnum())
+        if not mot:
+            continue
+        variantes = {mot, mot.replace("oe", "œ").replace("ae", "æ"), mot.replace("œ", "oe").replace("æ", "ae")}
+        termes.append("(" + " OR ".join(f'"{v}"*' for v in sorted(variantes)) + ")")
+    return " AND ".join(termes)
 
 
 class Base:

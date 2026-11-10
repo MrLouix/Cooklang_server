@@ -13,7 +13,9 @@ from .config import Config
 from .db import Base, maintenant
 from .depots import Depot, ErreurGit
 
-FILTRES = ["--exclude", ".git/**", "--exclude", ".gitignore"]
+# Ni le dépôt Git ni les fichiers cachés ne sont comparés ou copiés ; ceux de l'appli Cook
+# (.bookmarks, .shopping-list…) restent donc intacts côté Drive, rclone ne supprimant pas les exclus.
+FILTRES = ["--exclude", ".git/**", "--exclude", ".*", "--exclude", "**/.*"]
 
 
 class Synchro:
@@ -58,8 +60,8 @@ class Synchro:
     def comparer(self) -> dict[str, str]:
         """Différences local → Drive : {chemin: '*' différent | '+' absent du Drive | '-' absent en local}."""
         proc = self._rclone("check", str(self.recettes.racine), self.config.rclone_dest, "--combined", "-", *FILTRES)
-        if proc.returncode not in (0, 1):
-            raise RuntimeError(proc.stderr.strip() or "rclone check a échoué")
+        if proc.returncode != 0 and "differences found" not in proc.stderr:
+            raise RuntimeError(proc.stderr.strip().splitlines()[-1] if proc.stderr.strip() else "rclone check a échoué")
         differences = {}
         for ligne in proc.stdout.splitlines():
             if len(ligne) > 2 and ligne[0] in "*+-":

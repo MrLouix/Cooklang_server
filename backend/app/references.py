@@ -303,6 +303,8 @@ class References:
 
     # --- liens (B-3, B-11) ------------------------------------------------
     def _telecharger(self, url: str) -> httpx.Response:
+        if urlparse(url).scheme not in ("http", "https"):
+            raise ErreurReference("L'URL doit commencer par http:// ou https://.")
         if self.verifier_hote:
             url_publique(url)
         try:
