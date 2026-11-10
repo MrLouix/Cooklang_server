@@ -1,0 +1,8 @@
+{
+  "name": "aide-culinaire-outils",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@cooklang/cooklang": "0.19.1"
+  }
+}
