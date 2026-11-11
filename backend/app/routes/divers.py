@@ -15,12 +15,12 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 
 from .. import parametres as mod_parametres
-from ..config import MODELES
 from ..contexte import Contexte
 from ..db import maintenant
 from ..initialisation import FICHIERS_MEMOIRE
 from ..propositions import Refus
 from .commun import contexte
+from .discussions import _modele
 
 routeur = APIRouter(prefix="/api")
 
@@ -114,8 +114,8 @@ def quota(ctx: Contexte = Depends(contexte)) -> dict:
     mois = maintenant()[:7]
     filtre = "role = 'assistant' AND cree_le LIKE ?"
     total = ctx.base.ligne(
-        f"SELECT coalesce(sum(CASE WHEN moteur = 'api' THEN 0 ELSE cout END), 0) AS c, "
-        f"coalesce(sum(CASE WHEN moteur = 'api' THEN cout ELSE 0 END), 0) AS api, count(*) AS n FROM messages WHERE {filtre}",
+        f"SELECT coalesce(sum(CASE WHEN moteur IN ('api', 'openai') THEN 0 ELSE cout END), 0) AS c, "
+        f"coalesce(sum(CASE WHEN moteur IN ('api', 'openai') THEN cout ELSE 0 END), 0) AS api, count(*) AS n FROM messages WHERE {filtre}",
         (f"{mois}%",),
     )
     historique = ctx.base.lignes(
@@ -213,8 +213,8 @@ async def sante(ctx: Contexte = Depends(contexte)) -> dict:
         "rclone": _version("rclone", "version"),
         "node": _version("node", "--version"),
         "ocr": shutil.which("tesseract") is not None,
-        "modeles": MODELES,
-        "modele_defaut": ctx.config.modele_defaut,
+        "modeles": ctx.moteur.modeles(),
+        "modele_defaut": _modele(ctx, None),
         "domaines": ctx.parametres.domaines(),
         "file": ctx.tours.file.qsize(),
     }

@@ -234,5 +234,6 @@ Le plan ci-dessus a été suivi ; ces points diffèrent de ce qu'il annonçait.
 | Textes de domaine (PA-4) | Injectés selon le domaine | Idem, sauf « Matériel » et « Forme des réponses », toujours injectés | Ils s'appliquent à toute discussion |
 | Conflit Drive (S-4) | — | La version du Drive est rangée dans `<Nom>.conflit-<date>.cook`, celle du serveur garde le nom d'origine | Une seule règle, sans question posée en plein enregistrement |
 | Second moteur par clé API (M-1) | Codé si la maquette l'exige | Codé (`backend/app/moteur/api_anthropic.py`), avec bascule automatique quand le crédit du CLI est épuisé | Demandé après coup ; non essayé contre la vraie API, faute de clé |
+| Moteur pour d'autres fournisseurs | Évoqué (« clé API Anthropic ou OpenRouter ») | Codé (`backend/app/moteur/openai_compat.py`) : tout fournisseur compatible OpenAI, en principal ou en secours | Demandé après coup ; non essayé contre un vrai fournisseur |
 | Migrations SQL numérotées | Prévues | Schéma unique créé au démarrage | Pas encore de version antérieure à migrer |
 | Phase 8, illustrations | v2 | Non commencée | Hors périmètre v1 |

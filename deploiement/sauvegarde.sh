@@ -14,9 +14,11 @@ trap 'rm -rf "$TRAVAIL"' EXIT
 mkdir -p "$CIBLE"
 # Copie cohérente de la base, même pendant une écriture.
 sqlite3 "$RACINE/data/app.db" ".backup '$TRAVAIL/app.db'"
-# Sessions du moteur API, s'il a servi.
+# Sessions des moteurs par API, s'ils ont servi.
 SESSIONS_API=()
-[ -d "$RACINE/data/sessions_api" ] && SESSIONS_API=(data/sessions_api)
+for dossier in data/sessions_api data/sessions_openai; do
+    [ -d "$RACINE/$dossier" ] && SESSIONS_API+=("$dossier")
+done
 tar -czf "$CIBLE/aide-culinaire-$DATE.tar.gz" \
     -C "$TRAVAIL" app.db \
     -C "$RACINE" --exclude='agent/.git' agent claude "${SESSIONS_API[@]}"

@@ -251,7 +251,7 @@ def test_haiku_sans_repli_et_tour_ephemere(moteur_api, serveur):
         "anthropic-beta" not in serveur.entetes[0] or "fallback" not in serveur.entetes[0]["anthropic-beta"]
     )
     assert [e.type for e in evs] == ["texte", "texte", "fin"] and evs[-1].session is None
-    assert not (moteur_api.sessions).exists()  # aucun fichier de session pour un titre
+    assert not moteur_api.sessions.dossier.exists()  # aucun fichier de session pour un titre
 
 
 def test_erreurs_de_l_api(moteur_api, serveur):
@@ -271,7 +271,7 @@ def test_erreurs_de_l_api(moteur_api, serveur):
         serveur.reponses = [reponse]
         evs = derouler(moteur_api, Demande("x", "sonnet"))
         assert evs[-1].type == "erreur" and evs[-1].code == code, code
-    assert not list(moteur_api.sessions.glob("*.json"))  # un tour en échec ne laisse pas de session
+    assert not list(moteur_api.sessions.dossier.glob("*.json"))  # un tour en échec ne laisse pas de session
     assert (
         derouler(moteur_api, Demande("x", "sonnet", session="api-" + "0" * 36))[-1].code
         == "session_introuvable"

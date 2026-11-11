@@ -6,6 +6,7 @@ import asyncio
 import uuid
 from collections.abc import AsyncIterator
 
+from ..config import MODELES
 from .base import Demande, Evenement
 
 BRIOCHE = """---
@@ -106,7 +107,10 @@ class MoteurFactice:
 
     @staticmethod
     def reconnait(session: str | None) -> bool:
-        return bool(session) and not session.startswith("api-")
+        return bool(session) and not session.startswith(("api-", "oai-"))
+
+    def modeles(self) -> list[str]:
+        return list(MODELES)
 
     async def version(self) -> str:
         return "factice"

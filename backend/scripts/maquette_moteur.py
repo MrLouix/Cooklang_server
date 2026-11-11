@@ -1,6 +1,6 @@
 """Maquette du moteur (jalon 1) : vérifie le CLI réel et mesure le coût par tour.
 
-    uv run python -m scripts.maquette_moteur [--moteur claude|api] [--modele sonnet] [--racine /tmp/maquette]
+    uv run python -m scripts.maquette_moteur [--moteur claude|api|openai] [--modele sonnet] [--racine /tmp/maquette]
 
 Consomme du crédit (`claude -p`, ou la clé API avec `--moteur api`) : quatre tours courts. À lancer une fois, après `claude setup-token`.
 """
@@ -52,7 +52,9 @@ async def principal() -> None:
     analyseur = argparse.ArgumentParser()
     analyseur.add_argument("--modele", default="sonnet")
     analyseur.add_argument("--racine", default=None)
-    analyseur.add_argument("--moteur", default="claude", choices=["claude", "api"], help="moteur à vérifier")
+    analyseur.add_argument(
+        "--moteur", default="claude", choices=["claude", "api", "openai"], help="moteur à vérifier"
+    )
     args = analyseur.parse_args()
     racine = Path(args.racine or tempfile.mkdtemp(prefix="maquette-"))
     config = Config(racine=racine)

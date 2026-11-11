@@ -37,6 +37,10 @@ def creer_moteur(config: Config, nom: str | None = None) -> Engine:
         from .moteur.api_anthropic import MoteurAPI
 
         return MoteurAPI(config)
+    if nom == "openai":
+        from .moteur.openai_compat import MoteurOpenAI
+
+        return MoteurOpenAI(config)
     if nom == "factice":
         from .moteur.factice import MoteurFactice
 

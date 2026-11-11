@@ -13,8 +13,6 @@ Différences avec le CLI, assumées :
 from __future__ import annotations
 
 import json
-import re
-import uuid
 from collections.abc import AsyncIterator
 from pathlib import Path
 
@@ -22,6 +20,7 @@ import anthropic
 
 from ..config import Config
 from .base import Demande, Evenement
+from .commun import Sessions, composer_systeme, developper_imports  # noqa: F401 — réexporté
 from .outils_lecture import DEFINITIONS, OutilsLecture
 
 PREFIXE_SESSION = "api-"
@@ -41,7 +40,6 @@ OUTILS_WEB = [
 ]
 NOMS_AFFICHES = {"web_search": "WebSearch", "web_fetch": "WebFetch"}
 MAX_ITERATIONS = 30
-IMPORT = re.compile(r"(?m)^@(\S+)\s*$")
 
 
 def cout_estime(modele: str, usage) -> float:
@@ -57,37 +55,6 @@ def cout_estime(modele: str, usage) -> float:
     return total / 1_000_000
 
 
-def developper_imports(texte: str, racine: Path, profondeur: int = 0) -> str:
-    """Remplace les lignes `@chemin` de CLAUDE.md par le contenu du fichier, comme le fait le CLI."""
-
-    def remplacer(trouve: re.Match) -> str:
-        cible = (racine / trouve.group(1)).resolve()
-        if profondeur >= 3 or not cible.is_file() or not cible.is_relative_to(racine.resolve()):
-            return ""
-        return developper_imports(cible.read_text(encoding="utf-8"), racine, profondeur + 1).strip()
-
-    return IMPORT.sub(remplacer, texte)
-
-
-def lister_skills(agent: Path) -> str:
-    lignes = []
-    for fichier in sorted((agent / ".claude" / "skills").glob("*/SKILL.md")):
-        entete = fichier.read_text(encoding="utf-8").split("---", 2)
-        champs = dict(
-            re.findall(r'(?m)^(name|description):\s*"?(.*?)"?\s*$', entete[1] if len(entete) > 2 else "")
-        )
-        nom = champs.get("name", fichier.parent.name)
-        lignes.append(
-            f"- **{nom}** — {champs.get('description', '')} Fichier : `.claude/skills/{fichier.parent.name}/SKILL.md`"
-        )
-    if not lignes:
-        return ""
-    return (
-        "# Skills disponibles\n\nQuand une demande correspond à un skill, lis son fichier en entier avec Read, "
-        "puis suis-le. Il n'y a pas d'outil Skill ici.\n\n" + "\n".join(lignes)
-    )
-
-
 class MoteurAPI:
     nom = "api"
 
@@ -95,11 +62,13 @@ class MoteurAPI:
         self.config = config
         self._client = client
         self.outils = OutilsLecture(config.agent, config.recettes)
-        self.sessions = config.data / "sessions_api"
+        self.sessions = Sessions(config.data / "sessions_api", PREFIXE_SESSION)
 
-    @staticmethod
-    def reconnait(session: str | None) -> bool:
-        return bool(session) and session.startswith(PREFIXE_SESSION)
+    def reconnait(self, session: str | None) -> bool:
+        return self.sessions.reconnait(session)
+
+    def modeles(self) -> list[str]:
+        return list(MODELES_API)
 
     @property
     def client(self) -> anthropic.AsyncAnthropic:
@@ -112,31 +81,6 @@ class MoteurAPI:
                 else anthropic.AsyncAnthropic()
             )
         return self._client
-
-    # --- sessions ---------------------------------------------------------
-    def _fichier(self, session: str) -> Path:
-        if not re.fullmatch(rf"{PREFIXE_SESSION}[0-9a-f-]{{36}}", session):
-            raise FileNotFoundError(session)
-        return self.sessions / f"{session}.json"
-
-    def _charger(self, session: str) -> dict:
-        return json.loads(self._fichier(session).read_text(encoding="utf-8"))
-
-    def _enregistrer(self, session: str, etat: dict) -> None:
-        self.sessions.mkdir(parents=True, exist_ok=True)
-        provisoire = self._fichier(session).with_suffix(".tmp")
-        provisoire.write_text(json.dumps(etat, ensure_ascii=False), encoding="utf-8")
-        provisoire.replace(self._fichier(session))
-
-    # --- prompt système ---------------------------------------------------
-    def systeme(self, consignes: str) -> str:
-        agent = self.config.agent
-        claude_md = agent / "CLAUDE.md"
-        parties = [
-            developper_imports(claude_md.read_text(encoding="utf-8"), agent) if claude_md.is_file() else ""
-        ]
-        parties += [lister_skills(agent), f"Répertoire de travail : `{agent}`.", consignes]
-        return "\n\n".join(p.strip() for p in parties if p.strip())
 
     # --- exécution --------------------------------------------------------
     def _parametres(self, modele: str, etat: dict, ephemere: bool) -> dict:
@@ -164,10 +108,10 @@ class MoteurAPI:
 
     async def run(self, demande: Demande) -> AsyncIterator[Evenement]:
         modele = MODELES_API.get(demande.modele, demande.modele)
-        systeme = "" if demande.ephemere else self.systeme(demande.consignes)
+        systeme = "" if demande.ephemere else composer_systeme(self.config, demande.consignes)
         if demande.session:
             try:
-                etat = self._charger(demande.session)
+                etat = self.sessions.charger(demande.session)
             except (OSError, json.JSONDecodeError):
                 yield Evenement(
                     "erreur", code="session_introuvable", texte="No conversation found with session ID"
@@ -175,7 +119,7 @@ class MoteurAPI:
                 return
             session = demande.session
         else:
-            session = f"{PREFIXE_SESSION}{uuid.uuid4()}"
+            session = self.sessions.nouvelle()
             etat = {"systeme": systeme, "consignes": systeme, "messages": []}
         etat["messages"].append({"role": "user", "content": demande.message})
         if systeme != etat.get("consignes"):
@@ -288,7 +232,7 @@ class MoteurAPI:
             return
 
         if not demande.ephemere:
-            self._enregistrer(session, etat)
+            self.sessions.enregistrer(session, etat)
         yield Evenement("fin", session=None if demande.ephemere else session, cout=cout)
 
     @staticmethod

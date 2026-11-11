@@ -9,7 +9,7 @@ import os
 from collections.abc import AsyncIterator
 from pathlib import Path
 
-from ..config import OUTILS_AUTORISES, OUTILS_INTERDITS, Config
+from ..config import MODELES, OUTILS_AUTORISES, OUTILS_INTERDITS, Config
 from .base import Demande, Evenement, classer_erreur
 
 
@@ -153,7 +153,10 @@ class MoteurClaudeCLI:
 
     @staticmethod
     def reconnait(session: str | None) -> bool:
-        return bool(session) and not session.startswith("api-")
+        return bool(session) and not session.startswith(("api-", "oai-"))
+
+    def modeles(self) -> list[str]:
+        return list(MODELES)
 
     async def version(self) -> str:
         try:

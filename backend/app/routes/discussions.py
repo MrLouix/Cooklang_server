@@ -3,7 +3,6 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
-from ..config import MODELES
 from ..contexte import Contexte
 from ..db import maintenant, requete_fts
 from ..tours import Occupe, nouvel_identifiant
@@ -49,8 +48,13 @@ def _discussion(ctx: Contexte, identifiant: str) -> dict:
 
 
 def _modele(ctx: Contexte, modele: str | None) -> str:
-    modele = modele or ctx.config.modele_defaut
-    if modele not in MODELES and not modele.startswith("claude-"):
+    """Modèle demandé s'il est proposé par le moteur principal ; à défaut, son modèle par défaut."""
+    proposes = ctx.moteur.modeles()
+    if modele is None:
+        return (
+            ctx.config.modele_defaut if ctx.config.modele_defaut in proposes or not proposes else proposes[0]
+        )
+    if modele not in proposes:
         raise HTTPException(400, "Modèle inconnu.")
     return modele
 

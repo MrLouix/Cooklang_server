@@ -41,6 +41,16 @@ class Config:
         default_factory=lambda: _env("CLE_API_FICHIER", "/run/secrets/anthropic_api_key")
     )
     api_effort: str = field(default_factory=lambda: _env("API_EFFORT"))
+    # Moteur « openai » : tout fournisseur compatible avec l'API OpenAI (OpenRouter par défaut).
+    openai_url: str = field(default_factory=lambda: _env("OPENAI_URL", "https://openrouter.ai/api/v1"))
+    openai_cle_fichier: str = field(
+        default_factory=lambda: _env("OPENAI_CLE_FICHIER", "/run/secrets/openai_api_key")
+    )
+    openai_modeles: str = field(default_factory=lambda: _env("OPENAI_MODELES"))
+    openai_tarifs: str = field(default_factory=lambda: _env("OPENAI_TARIFS"))
+    openai_corps_extra: str = field(default_factory=lambda: _env("OPENAI_CORPS_EXTRA"))
+    openai_vision: bool = field(default_factory=lambda: _env("OPENAI_VISION", "1") == "1")
+    openai_max_tokens: int = field(default_factory=lambda: int(_env("OPENAI_MAX_TOKENS", "0")))
     claude_bin: str = field(default_factory=lambda: _env("CLAUDE_BIN", "claude"))
     jeton_fichier: str = field(default_factory=lambda: _env("JETON_FICHIER", "/run/secrets/claude_token"))
     front: Path = field(default_factory=lambda: Path(_env("FRONT", str(RACINE_CODE / "frontend" / "dist"))))
