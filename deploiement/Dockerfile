@@ -7,7 +7,7 @@ RUN npm ci
 COPY frontend/ ./
 RUN npm run build
 
-FROM python:3.12-slim-bookworm
+FROM python:3.15-slim-bookworm
 # Version du CLI figée (X-6) : la mise à jour se fait en changeant cette ligne et en reconstruisant l'image.
 ARG CLAUDE_CODE_VERSION=2.1.322
 ENV PYTHONUNBUFFERED=1 UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
