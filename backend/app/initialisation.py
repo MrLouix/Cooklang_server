@@ -44,7 +44,16 @@ IGNORER_AGENT = ["references/documents/", "references/liens/", "pieces/"]
 # Le LLM n'a ni shell ni écriture (M-3) ; ces règles doublent les options de la ligne de commande.
 REGLAGES_CLI = {
     "permissions": {
-        "deny": ["Write", "Edit", "Bash", "NotebookEdit", "Read(//**/.env)", "Read(~/.ssh/**)", "Read(~/.claude/**)", "Read(//run/secrets/**)"],
+        "deny": [
+            "Write",
+            "Edit",
+            "Bash",
+            "NotebookEdit",
+            "Read(//**/.env)",
+            "Read(~/.ssh/**)",
+            "Read(~/.claude/**)",
+            "Read(//run/secrets/**)",
+        ],
     }
 }
 
@@ -88,7 +97,13 @@ def initialiser(config: Config) -> tuple[Depot, Depot]:
     for nom in ("parametres.md", "references.md"):
         if not (agent / "memoire" / nom).exists():
             (agent / "memoire" / nom).write_text("", encoding="utf-8")
-    for dossier in ("references/fiches", "references/documents", "references/liens", "pieces", ".claude/skills"):
+    for dossier in (
+        "references/fiches",
+        "references/documents",
+        "references/liens",
+        "pieces",
+        ".claude/skills",
+    ):
         (agent / dossier).mkdir(parents=True, exist_ok=True)
     reglages = agent / ".claude" / "settings.json"
     if not reglages.exists():

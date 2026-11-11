@@ -64,7 +64,9 @@ class MoteurFactice:
 
             return (
                 "Voici une fiche de référence.\n\n````proposition\ncible: fiche\ntype: creation\n"
-                "chemin: references/fiches/brioche.md\n---\n" + GABARIT_FICHE.replace("{titre}", "Brioche") + "````\n"
+                "chemin: references/fiches/brioche.md\n---\n"
+                + GABARIT_FICHE.replace("{titre}", "Brioche")
+                + "````\n"
             )
         if "brioche" in bas or "enregistre" in bas:
             chemin = "Boulangerie et viennoiserie/Brioche du dimanche.cook"
@@ -85,7 +87,9 @@ class MoteurFactice:
             yield Evenement("erreur", code=code, texte=f"erreur simulée : {code}")
             return
         if demande.session and demande.session not in self.sessions:
-            yield Evenement("erreur", code="session_introuvable", texte="No conversation found with session ID")
+            yield Evenement(
+                "erreur", code="session_introuvable", texte="No conversation found with session ID"
+            )
             return
         session = demande.session or str(uuid.uuid4())
         if not demande.ephemere:

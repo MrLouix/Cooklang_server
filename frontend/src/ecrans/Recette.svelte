@@ -10,7 +10,12 @@
   let onglet = $state('recette');
   let version = $state(null); // { sha, contenu }
   const base = $derived('/api/recettes/' + cheminRecette(chemin));
-  const nom = $derived(chemin.split('/').pop().replace(/\.cook$/, ''));
+  const nom = $derived(
+    chemin
+      .split('/')
+      .pop()
+      .replace(/\.cook$/, ''),
+  );
 
   async function charger() {
     recette = await tenter(() => api.get(base));
@@ -21,7 +26,7 @@
   }
 
   async function restaurer(sha) {
-    if (!confirm('Restaurer cette version ? Un nouveau commit sera créé, rien n\'est effacé.')) return;
+    if (!confirm("Restaurer cette version ? Un nouveau commit sera créé, rien n'est effacé.")) return;
     if (await tenter(() => api.post(`${base}/restaurer`, { sha }), 'Version restaurée.')) {
       version = null;
       await charger();
@@ -49,8 +54,12 @@
       <div class="secondaire" style="margin-bottom:10px">{chemin}</div>
       <div class="onglets" role="tablist">
         <button class:actif={onglet === 'recette'} onclick={() => (onglet = 'recette')}>Recette</button>
-        <button class:actif={onglet === 'historique'} onclick={() => (onglet = 'historique')}>Historique ({recette.historique.length})</button>
-        <button class:actif={onglet === 'discussions'} onclick={() => (onglet = 'discussions')}>Discussions ({recette.discussions.length})</button>
+        <button class:actif={onglet === 'historique'} onclick={() => (onglet = 'historique')}
+          >Historique ({recette.historique.length})</button
+        >
+        <button class:actif={onglet === 'discussions'} onclick={() => (onglet = 'discussions')}
+          >Discussions ({recette.discussions.length})</button
+        >
       </div>
 
       {#if onglet === 'recette'}
@@ -68,7 +77,9 @@
               {#if h.corps}<div class="secondaire" style="white-space:pre-wrap">{h.corps}</div>{/if}
               {#if i > 0}
                 <div class="rangee" style="margin-top:8px">
-                  <button class="btn petit" onclick={() => voir(h.sha)}>{version?.sha === h.sha ? 'Masquer' : 'Comparer à la version actuelle'}</button>
+                  <button class="btn petit" onclick={() => voir(h.sha)}
+                    >{version?.sha === h.sha ? 'Masquer' : 'Comparer à la version actuelle'}</button
+                  >
                   <button class="btn petit" onclick={() => restaurer(h.sha)} disabled={!app.enLigne}>Restaurer</button>
                 </div>
                 {#if version?.sha === h.sha}
@@ -95,5 +106,7 @@
       {/if}
     {/if}
   </div>
-  <button class="btn principal" style="margin:0 14px 12px;flex:none" onclick={discuter} disabled={!app.enLigne || !recette}>💬 Discuter de cette recette</button>
+  <button class="btn principal" style="margin:0 14px 12px;flex:none" onclick={discuter} disabled={!app.enLigne || !recette}
+    >💬 Discuter de cette recette</button
+  >
 </div>

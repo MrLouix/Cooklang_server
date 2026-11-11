@@ -28,7 +28,9 @@ routeur = APIRouter(prefix="/api")
 
 
 def _refus(refus: Refus) -> JSONResponse:
-    return JSONResponse({"code": refus.code, "message": refus.message, **refus.details}, status_code=refus.statut)
+    return JSONResponse(
+        {"code": refus.code, "message": refus.message, **refus.details}, status_code=refus.statut
+    )
 
 
 @routeur.get("/propositions/{identifiant}")
@@ -82,7 +84,9 @@ def lire_memoire(fichier: str, ctx: Contexte = Depends(contexte)) -> dict:
 
 
 @routeur.put("/memoire/{fichier}")
-def ecrire_memoire(fichier: str, corps: Texte, taches: BackgroundTasks, ctx: Contexte = Depends(contexte)) -> dict:
+def ecrire_memoire(
+    fichier: str, corps: Texte, taches: BackgroundTasks, ctx: Contexte = Depends(contexte)
+) -> dict:
     if fichier not in FICHIERS_MEMOIRE:
         raise HTTPException(404, "Fichier de mémoire inconnu.")
     with ctx.synchro.verrou:
@@ -107,7 +111,10 @@ def relancer_synchro(ctx: Contexte = Depends(contexte)) -> dict:
 @routeur.get("/quota")
 def quota(ctx: Contexte = Depends(contexte)) -> dict:
     mois = maintenant()[:7]
-    total = ctx.base.ligne("SELECT coalesce(sum(cout), 0) AS c, count(*) AS n FROM messages WHERE role = 'assistant' AND cree_le LIKE ?", (f"{mois}%",))
+    total = ctx.base.ligne(
+        "SELECT coalesce(sum(cout), 0) AS c, count(*) AS n FROM messages WHERE role = 'assistant' AND cree_le LIKE ?",
+        (f"{mois}%",),
+    )
     historique = ctx.base.lignes(
         "SELECT substr(cree_le, 1, 7) AS mois, round(sum(cout), 4) AS cout, count(*) AS tours FROM messages "
         "WHERE role = 'assistant' GROUP BY 1 ORDER BY 1 DESC LIMIT 12"
@@ -158,7 +165,11 @@ async def deposer_piece(fichier: UploadFile, ctx: Contexte = Depends(contexte)) 
         raise HTTPException(413, "Fichier trop volumineux (15 Mo au plus).")
     nom = f"{uuid.uuid4().hex}{extension}"
     (ctx.config.agent / "pieces" / nom).write_bytes(contenu)
-    return {"fichier": nom, "nom": fichier.filename, "type": fichier.content_type or mimetypes.guess_type(nom)[0] or ""}
+    return {
+        "fichier": nom,
+        "nom": fichier.filename,
+        "type": fichier.content_type or mimetypes.guess_type(nom)[0] or "",
+    }
 
 
 @routeur.get("/pieces/{nom}")
@@ -176,7 +187,9 @@ def _version(*commande: str) -> str:
     if not shutil.which(commande[0]):
         return "absent"
     try:
-        sortie = subprocess.run(commande, capture_output=True, text=True, timeout=10).stdout.strip().splitlines()
+        sortie = (
+            subprocess.run(commande, capture_output=True, text=True, timeout=10).stdout.strip().splitlines()
+        )
         return sortie[0] if sortie else "?"
     except (OSError, subprocess.TimeoutExpired):
         return "erreur"

@@ -24,7 +24,9 @@ def empreinte(contenu: bytes | str | None) -> str | None:
 
 
 class Depot:
-    def __init__(self, racine: Path, auteur: str = "Aide Culinaire", courriel: str = "aide-culinaire@localhost"):
+    def __init__(
+        self, racine: Path, auteur: str = "Aide Culinaire", courriel: str = "aide-culinaire@localhost"
+    ):
         self.racine = Path(racine)
         self.auteur = auteur
         self.courriel = courriel
@@ -55,7 +57,11 @@ class Depot:
     def resoudre(self, chemin: str) -> Path:
         """Chemin absolu sûr à l'intérieur du dépôt."""
         p = Path(chemin)
-        if p.is_absolute() or not chemin.strip() or any(part in ("..", "") or part.startswith(".") for part in p.parts):
+        if (
+            p.is_absolute()
+            or not chemin.strip()
+            or any(part in ("..", "") or part.startswith(".") for part in p.parts)
+        ):
             raise CheminInvalide(f"Chemin refusé : {chemin}")
         cible = (self.racine / p).resolve()
         if not cible.is_relative_to(self.racine.resolve()):
@@ -85,7 +91,9 @@ class Depot:
         for bloc in self.git(*args).split("\x1e"):
             champs = bloc.strip("\n").split("\x1f")
             if len(champs) == 4:
-                entrees.append({"sha": champs[0], "date": champs[1], "sujet": champs[2], "corps": champs[3].strip()})
+                entrees.append(
+                    {"sha": champs[0], "date": champs[1], "sujet": champs[2], "corps": champs[3].strip()}
+                )
         return entrees
 
     def version(self, chemin: str, sha: str) -> str | None:

@@ -96,7 +96,15 @@
                   </select>
                 {:else if r.controle === 'nombre'}
                   <label for={r.cle}>{r.libelle} <span class="secondaire">({r.min} à {r.max} {r.unite ?? ''})</span></label>
-                  <input id={r.cle} type="number" min={r.min} max={r.max} bind:value={valeurs[r.cle]} onchange={() => enregistrer()} inputmode="numeric" />
+                  <input
+                    id={r.cle}
+                    type="number"
+                    min={r.min}
+                    max={r.max}
+                    bind:value={valeurs[r.cle]}
+                    onchange={() => enregistrer()}
+                    inputmode="numeric"
+                  />
                 {:else if r.controle === 'case'}
                   <label class="ligne">
                     <input type="checkbox" bind:checked={valeurs[r.cle]} onchange={() => enregistrer()} />
@@ -106,7 +114,11 @@
                   <div class="libelle">{r.libelle}</div>
                   {#each r.valeurs as v}
                     <label class="ligne">
-                      <input type="checkbox" checked={valeurs[r.cle].includes(v.valeur)} onchange={(e) => basculerCase(r.cle, v.valeur, e.target.checked)} />
+                      <input
+                        type="checkbox"
+                        checked={valeurs[r.cle].includes(v.valeur)}
+                        onchange={(e) => basculerCase(r.cle, v.valeur, e.target.checked)}
+                      />
                       {v.libelle}
                     </label>
                   {/each}
@@ -115,7 +127,11 @@
                   {#each r.options as option}
                     <div class="double">
                       <label class="ligne">
-                        <input type="checkbox" checked={option in valeurs[r.cle]} onchange={(e) => basculerNiveau(r, option, e.target.checked)} />
+                        <input
+                          type="checkbox"
+                          checked={option in valeurs[r.cle]}
+                          onchange={(e) => basculerNiveau(r, option, e.target.checked)}
+                        />
                         {option}
                       </label>
                       {#if option in valeurs[r.cle]}
@@ -133,22 +149,43 @@
                       <select bind:value={e.niveau} onchange={() => enregistrer()} aria-label={'Niveau pour ' + e.nom}>
                         {#each r.niveaux as n}<option value={n.valeur}>{n.libelle}</option>{/each}
                       </select>
-                      <button class="btn petit discret" onclick={() => (valeurs[r.cle].splice(i, 1), enregistrer())} aria-label={'Retirer ' + e.nom}>✕</button>
+                      <button
+                        class="btn petit discret"
+                        onclick={() => (valeurs[r.cle].splice(i, 1), enregistrer())}
+                        aria-label={'Retirer ' + e.nom}>✕</button
+                      >
                     </div>
                   {/each}
                   <form class="double" onsubmit={(e) => (e.preventDefault(), ajouterEtiquette(r.cle))}>
-                    <input type="text" placeholder="Un ingrédient, puis Ajouter" bind:value={nouvelleEtiquette} aria-label="Ingrédient à éviter" />
+                    <input
+                      type="text"
+                      placeholder="Un ingrédient, puis Ajouter"
+                      bind:value={nouvelleEtiquette}
+                      aria-label="Ingrédient à éviter"
+                    />
                     <button class="btn petit" type="submit">Ajouter</button>
                   </form>
                 {:else if r.controle === 'textes_domaines'}
-                  <p class="secondaire">Un texte n'est transmis à l'assistant que si la discussion porte sur ce domaine. « Matériel » et « Forme des réponses » le sont toujours.</p>
+                  <p class="secondaire">
+                    Un texte n'est transmis à l'assistant que si la discussion porte sur ce domaine. « Matériel » et « Forme des réponses »
+                    le sont toujours.
+                  </p>
                   {#each Object.keys(valeurs[r.cle]) as domaine (domaine)}
                     <div class="domaine">
                       <div class="rangee">
                         <label for={'d-' + domaine} style="flex:1">{domaine}</label>
-                        <button class="btn petit discret" onclick={() => supprimerDomaine(r.cle, domaine)} aria-label={'Supprimer le domaine ' + domaine}>✕</button>
+                        <button
+                          class="btn petit discret"
+                          onclick={() => supprimerDomaine(r.cle, domaine)}
+                          aria-label={'Supprimer le domaine ' + domaine}>✕</button
+                        >
                       </div>
-                      <textarea id={'d-' + domaine} rows="2" bind:value={valeurs[r.cle][domaine]} oninput={() => enregistrer(800)} placeholder="Préférences libres pour ce domaine"></textarea>
+                      <textarea
+                        id={'d-' + domaine}
+                        rows="2"
+                        bind:value={valeurs[r.cle][domaine]}
+                        oninput={() => enregistrer(800)}
+                        placeholder="Préférences libres pour ce domaine"></textarea>
                     </div>
                   {/each}
                   <form class="double" onsubmit={(e) => (e.preventDefault(), ajouterDomaine(r.cle))}>
@@ -161,19 +198,51 @@
           </section>
         {/each}
       </fieldset>
-      <p class="secondaire">Les fichiers .cook restent toujours en grammes : les unités ne changent que la présentation dans la conversation.</p>
+      <p class="secondaire">
+        Les fichiers .cook restent toujours en grammes : les unités ne changent que la présentation dans la conversation.
+      </p>
     {/if}
   </div>
   {#if etat}<div class="bandeau" style="background:var(--surface-2)" aria-live="polite">{etat}</div>{/if}
 </div>
 
 <style>
-  fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
-  .reglage { padding: 8px 0; border-top: 1px solid var(--bord); }
-  .reglage:first-of-type { border-top: 0; }
-  .reglage > label:not(.ligne), .libelle { display: block; font-weight: 550; margin-bottom: 6px; }
-  .double { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
-  .double > label, .double > input, .double > .etiquette { flex: 1; min-width: 0; }
-  .double > select { flex: 1.2; min-width: 0; }
-  .domaine { margin-bottom: 10px; }
+  fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    min-width: 0;
+  }
+  .reglage {
+    padding: 8px 0;
+    border-top: 1px solid var(--bord);
+  }
+  .reglage:first-of-type {
+    border-top: 0;
+  }
+  .reglage > label:not(.ligne),
+  .libelle {
+    display: block;
+    font-weight: 550;
+    margin-bottom: 6px;
+  }
+  .double {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .double > label,
+  .double > input,
+  .double > .etiquette {
+    flex: 1;
+    min-width: 0;
+  }
+  .double > select {
+    flex: 1.2;
+    min-width: 0;
+  }
+  .domaine {
+    margin-bottom: 10px;
+  }
 </style>

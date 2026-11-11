@@ -26,15 +26,28 @@
     {#if categories}<span class="secondaire">{total} fichier{total > 1 ? 's' : ''}</span>{/if}
   </header>
   <div class="corps">
-    <input type="search" placeholder="Rechercher un nom, un ingrédient, une étape" bind:value={recherche} aria-label="Rechercher une recette" style="margin-bottom:12px" />
+    <input
+      type="search"
+      placeholder="Rechercher un nom, un ingrédient, une étape"
+      bind:value={recherche}
+      aria-label="Rechercher une recette"
+      style="margin-bottom:12px"
+    />
     {#if categories === null}
       <div class="vide">Chargement…</div>
     {:else if categories.length === 0}
-      <div class="vide">{recherche ? 'Aucune recette ne correspond.' : "Aucune recette pour l'instant. Elles apparaîtront ici après ton premier « Enregistrer »."}</div>
+      <div class="vide">
+        {recherche
+          ? 'Aucune recette ne correspond.'
+          : "Aucune recette pour l'instant. Elles apparaîtront ici après ton premier « Enregistrer »."}
+      </div>
     {:else}
       {#each categories as categorie (categorie.nom)}
         <details class="carte" open={Boolean(recherche) || categories.length <= 4}>
-          <summary><h2>{categorie.nom}</h2><span class="etiquette">{categorie.recettes.length}</span></summary>
+          <summary
+            ><h2>{categorie.nom}</h2>
+            <span class="etiquette">{categorie.recettes.length}</span></summary
+          >
           <ul class="liste" style="margin-top:10px">
             {#each categorie.recettes as r (r.chemin)}
               <li>
@@ -53,8 +66,22 @@
 </div>
 
 <style>
-  summary { display: flex; align-items: center; gap: 8px; cursor: pointer; list-style: none; min-height: 32px; }
-  summary::-webkit-details-marker { display: none; }
-  summary h2 { flex: 1; }
-  details .element { background: var(--surface-2); border-color: transparent; }
+  summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    list-style: none;
+    min-height: 32px;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  summary h2 {
+    flex: 1;
+  }
+  details .element {
+    background: var(--surface-2);
+    border-color: transparent;
+  }
 </style>

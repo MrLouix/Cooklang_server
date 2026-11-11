@@ -51,7 +51,9 @@ def normaliser_chemin(cible: str, chemin: str) -> str:
             raise CheminInvalide("Une recette s'écrit dans `<Catégorie>/<Nom>.cook`.")
     elif cible == "memoire":
         if len(p.parts) != 2 or p.parts[0] != "memoire" or p.name not in FICHIERS_MEMOIRE:
-            raise CheminInvalide("La mémoire se limite à : " + ", ".join(f"memoire/{f}" for f in FICHIERS_MEMOIRE) + ".")
+            raise CheminInvalide(
+                "La mémoire se limite à : " + ", ".join(f"memoire/{f}" for f in FICHIERS_MEMOIRE) + "."
+            )
     elif cible == "fiche":
         if len(p.parts) != 3 or p.parts[:2] != ("references", "fiches") or p.suffix != ".md":
             raise CheminInvalide("Une fiche s'écrit dans `references/fiches/<nom>.md`.")
@@ -83,7 +85,16 @@ class Propositions:
             curseur = self.ctx.base.executer(
                 "INSERT INTO propositions(message_id, discussion_id, cible, type, chemin, contenu, sha_base, cree_le) "
                 "VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
-                (message_id, discussion_id, bloc["cible"], bloc["type"], bloc["chemin"], bloc["contenu"], base, maintenant()),
+                (
+                    message_id,
+                    discussion_id,
+                    bloc["cible"],
+                    bloc["type"],
+                    bloc["chemin"],
+                    bloc["contenu"],
+                    base,
+                    maintenant(),
+                ),
             )
             creees.append(self.vue(curseur.lastrowid))
             return f"[[proposition:{curseur.lastrowid}]]"
@@ -114,7 +125,9 @@ class Propositions:
         return p
 
     def du_message(self, message_id: int) -> list[dict]:
-        ids = self.ctx.base.lignes("SELECT id FROM propositions WHERE message_id = ? ORDER BY id", (message_id,))
+        ids = self.ctx.base.lignes(
+            "SELECT id FROM propositions WHERE message_id = ? ORDER BY id", (message_id,)
+        )
         return [self.vue(i["id"]) for i in ids]
 
     # --- actions ----------------------------------------------------------
@@ -122,7 +135,10 @@ class Propositions:
         p = self.vue(identifiant)
         if p["etat"] != "en_attente":
             raise Refus(409, "deja_traitee", "Cette proposition a déjà été traitée.")
-        self.ctx.base.executer("UPDATE propositions SET etat = 'rejetee', traite_le = ? WHERE id = ?", (maintenant(), identifiant))
+        self.ctx.base.executer(
+            "UPDATE propositions SET etat = 'rejetee', traite_le = ? WHERE id = ?",
+            (maintenant(), identifiant),
+        )
         return self.vue(identifiant)
 
     def valider(self, identifiant: int, confirmer_exclusions: bool = False, forcer: bool = False) -> dict:
@@ -148,9 +164,16 @@ class Propositions:
                 )  # fmt: skip
             avertissements = analyse.avertissements
             # 2. Exclusions strictes (PA-5).
-            alertes = verifier_exclusions(ctx.parametres.lire(), analyse.ingredients, ctx.parametres.synonymes())
+            alertes = verifier_exclusions(
+                ctx.parametres.lire(), analyse.ingredients, ctx.parametres.synonymes()
+            )
             if alertes and not confirmer_exclusions:
-                raise Refus(409, "exclusions", "La recette contient un ingrédient en exclusion stricte.", alertes=alertes)
+                raise Refus(
+                    409,
+                    "exclusions",
+                    "La recette contient un ingrédient en exclusion stricte.",
+                    alertes=alertes,
+                )
         elif p["cible"] == "fiche":
             erreurs = valider_fiche(contenu)
             if erreurs:
@@ -167,8 +190,12 @@ class Propositions:
                 try:
                     conflits = ctx.synchro.importer_externes(cible_ecriture=chemin)["conflits"]
                 except Exception as erreur:  # noqa: BLE001 — Drive injoignable : on écrit quand même, c'est journalisé
-                    ctx.synchro.journaliser("drive", "echec", erreur=f"Contrôle de divergence impossible : {erreur}"[:500])
-                    avertissements.append("Contrôle de divergence avec Drive impossible ; il sera rejoué à la prochaine synchro.")
+                    ctx.synchro.journaliser(
+                        "drive", "echec", erreur=f"Contrôle de divergence impossible : {erreur}"[:500]
+                    )
+                    avertissements.append(
+                        "Contrôle de divergence avec Drive impossible ; il sera rejoué à la prochaine synchro."
+                    )
             # 4. Le fichier a-t-il changé depuis la proposition ? Jamais d'écrasement silencieux (F-9).
             if depot.empreinte(chemin) != p["sha_base"] and not forcer:
                 raise Refus(
@@ -185,7 +212,14 @@ class Propositions:
                 "UPDATE propositions SET etat = 'validee', commit_sha = ?, erreur = NULL, traite_le = ? WHERE id = ?",
                 (sha, maintenant(), identifiant),
             )
-        return {"proposition": self.vue(identifiant), "commit": sha, "conflits": conflits, "avertissements": avertissements}
+        return {
+            "proposition": self.vue(identifiant),
+            "commit": sha,
+            "conflits": conflits,
+            "avertissements": avertissements,
+        }
 
     def _noter_erreur(self, identifiant: int, erreur: str) -> None:
-        self.ctx.base.executer("UPDATE propositions SET erreur = ? WHERE id = ?", (erreur[:1000], identifiant))
+        self.ctx.base.executer(
+            "UPDATE propositions SET erreur = ? WHERE id = ?", (erreur[:1000], identifiant)
+        )

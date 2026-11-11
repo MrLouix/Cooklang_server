@@ -19,8 +19,11 @@
   let minuteur;
 
   const ETATS = {
-    en_attente: ['Indexation en cours', 'alerte'], indexe: ['Indexé', 'ok'], accessible: ['Accessible', 'ok'],
-    inaccessible: ['Inaccessible', 'danger'], erreur: ['Erreur', 'danger'],
+    en_attente: ['Indexation en cours', 'alerte'],
+    indexe: ['Indexé', 'ok'],
+    accessible: ['Accessible', 'ok'],
+    inaccessible: ['Inaccessible', 'danger'],
+    erreur: ['Erreur', 'danger'],
   };
   const MODES = { copie_locale: 'Copie locale', a_la_demande: 'À la demande' };
 
@@ -43,7 +46,10 @@
   }
 
   async function enregistrerFiche() {
-    const r = await tenter(() => api.put(`/api/references/fiches/${encodeURIComponent(fiche.nom)}`, { contenu: fiche.contenu }), 'Fiche enregistrée.');
+    const r = await tenter(
+      () => api.put(`/api/references/fiches/${encodeURIComponent(fiche.nom)}`, { contenu: fiche.contenu }),
+      'Fiche enregistrée.',
+    );
     if (r) {
       fiche = null;
       charger();
@@ -60,7 +66,8 @@
 
   async function ajouterDocuments(evenement) {
     occupe = true;
-    for (const f of evenement.target.files) await tenter(() => api.envoyerFichier('/api/references', { fichier: f }), `« ${f.name} » ajouté.`);
+    for (const f of evenement.target.files)
+      await tenter(() => api.envoyerFichier('/api/references', { fichier: f }), `« ${f.name} » ajouté.`);
     evenement.target.value = '';
     occupe = false;
     charger();
@@ -69,7 +76,10 @@
   async function ajouterLien(evenement) {
     evenement.preventDefault();
     occupe = true;
-    const r = await tenter(() => api.envoyerFichier('/api/references', { url: url.trim(), mode, titre: titreLien.trim() || null }), 'Lien ajouté.');
+    const r = await tenter(
+      () => api.envoyerFichier('/api/references', { url: url.trim(), mode, titre: titreLien.trim() || null }),
+      'Lien ajouté.',
+    );
     occupe = false;
     if (r) {
       url = titreLien = '';
@@ -125,11 +135,18 @@
 
       {#if onglet === 'fiches'}
         {#if donnees.fiches.length === 0}
-          <div class="vide">Aucune fiche. Crée la première (brioche, pâte à choux, crèmes cuites…) ou demande à l'assistant d'en proposer une.</div>
+          <div class="vide">
+            Aucune fiche. Crée la première (brioche, pâte à choux, crèmes cuites…) ou demande à l'assistant d'en proposer une.
+          </div>
         {/if}
         <ul class="liste">
           {#each donnees.fiches as f (f.nom)}
-            <li><button class="element" onclick={() => ouvrirFiche(f.nom)}><div class="titre">{f.nom}</div><div class="secondaire">{f.chemin}</div></button></li>
+            <li>
+              <button class="element" onclick={() => ouvrirFiche(f.nom)}
+                ><div class="titre">{f.nom}</div>
+                <div class="secondaire">{f.chemin}</div></button
+              >
+            </li>
           {/each}
         </ul>
         <form class="rangee" onsubmit={(e) => (e.preventDefault(), nouvelleFiche())} style="flex-wrap:nowrap">
@@ -139,7 +156,9 @@
       {:else if onglet === 'sources'}
         <section class="carte">
           <h2>Ajouter un document</h2>
-          <p class="secondaire">PDF, EPUB, Markdown ou texte. Converti et indexé sur le serveur ; l'original est conservé et ne quitte pas la machine.</p>
+          <p class="secondaire">
+            PDF, EPUB, Markdown ou texte. Converti et indexé sur le serveur ; l'original est conservé et ne quitte pas la machine.
+          </p>
           <input type="file" bind:this={fichier} onchange={ajouterDocuments} accept=".pdf,.epub,.md,.markdown,.txt" multiple hidden />
           <button class="btn" onclick={() => fichier.click()} disabled={occupe || !app.enLigne}>Choisir des fichiers</button>
         </section>
@@ -161,24 +180,41 @@
               <span class="etiquette {ETATS[s.etat]?.[1]}">{ETATS[s.etat]?.[0] ?? s.etat}</span>
             </div>
             <div class="secondaire">
-              {s.type === 'lien' ? MODES[s.mode] : 'Document'} · ajouté le {dateCourte(s.ajoutee_le)}{s.passages ? ` · ${s.passages} passage(s) indexé(s)` : ''}
+              {s.type === 'lien' ? MODES[s.mode] : 'Document'} · ajouté le {dateCourte(s.ajoutee_le)}{s.passages
+                ? ` · ${s.passages} passage(s) indexé(s)`
+                : ''}
             </div>
-            {#if s.url}<a class="secondaire" href={s.url} target="_blank" rel="noopener noreferrer" style="word-break:break-all">{s.url}</a>{/if}
+            {#if s.url}<a class="secondaire" href={s.url} target="_blank" rel="noopener noreferrer" style="word-break:break-all">{s.url}</a
+              >{/if}
             {#if s.erreur}<div class="encart {s.etat === 'indexe' ? 'alerte' : 'danger'}">{s.erreur}</div>{/if}
             <div class="rangee" style="margin-top:8px">
               <label class="ligne" style="min-height:36px">
-                <input type="checkbox" checked={s.actif} onchange={(e) => action(() => api.patch(`/api/references/${s.id}`, { actif: e.target.checked }))} />
+                <input
+                  type="checkbox"
+                  checked={s.actif}
+                  onchange={(e) => action(() => api.patch(`/api/references/${s.id}`, { actif: e.target.checked }))}
+                />
                 Active
               </label>
               <span class="pousser"></span>
-              {#if s.type === 'lien'}<button class="btn petit" onclick={() => action(() => api.post(`/api/references/${s.id}/rafraichir`))}>Revérifier</button>{/if}
-              <button class="btn petit danger" onclick={() => confirm(`Retirer « ${s.titre} » ?`) && action(() => api.suppr(`/api/references/${s.id}`))}>Retirer</button>
+              {#if s.type === 'lien'}<button class="btn petit" onclick={() => action(() => api.post(`/api/references/${s.id}/rafraichir`))}
+                  >Revérifier</button
+                >{/if}
+              <button
+                class="btn petit danger"
+                onclick={() => confirm(`Retirer « ${s.titre} » ?`) && action(() => api.suppr(`/api/references/${s.id}`))}>Retirer</button
+              >
             </div>
           </div>
         {/each}
       {:else}
         <form class="rangee" onsubmit={rechercher} style="flex-wrap:nowrap;margin-bottom:12px">
-          <input type="search" placeholder="hydratation brioche, température à cœur…" bind:value={question} aria-label="Rechercher dans la base" />
+          <input
+            type="search"
+            placeholder="hydratation brioche, température à cœur…"
+            bind:value={question}
+            aria-label="Rechercher dans la base"
+          />
           <button class="btn" type="submit">Chercher</button>
         </form>
         {#if resultats?.length === 0}<div class="vide">Aucun passage trouvé.</div>{/if}
@@ -198,6 +234,11 @@
 </div>
 
 <style>
-  .inactif { opacity: 0.6; }
-  summary { cursor: pointer; font-weight: 600; }
+  .inactif {
+    opacity: 0.6;
+  }
+  summary {
+    cursor: pointer;
+    font-weight: 600;
+  }
 </style>

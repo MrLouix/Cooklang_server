@@ -41,7 +41,11 @@ def interpreter(ligne: dict, etat: dict) -> list[Evenement]:
         for bloc in ligne.get("message", {}).get("content", []):
             if bloc.get("type") in ("tool_use", "server_tool_use"):
                 sortie.append(
-                    Evenement("outil", nom=bloc.get("name", ""), detail=resumer_outil(bloc.get("name", ""), bloc.get("input") or {}))
+                    Evenement(
+                        "outil",
+                        nom=bloc.get("name", ""),
+                        detail=resumer_outil(bloc.get("name", ""), bloc.get("input") or {}),
+                    )
                 )
         return sortie
     if genre == "rate_limit_event":
@@ -51,9 +55,13 @@ def interpreter(ligne: dict, etat: dict) -> list[Evenement]:
     if genre == "result":
         etat["resultat"] = True
         if ligne.get("is_error"):
-            message = "; ".join(ligne.get("errors") or []) or str(ligne.get("result") or ligne.get("subtype") or "")
+            message = "; ".join(ligne.get("errors") or []) or str(
+                ligne.get("result") or ligne.get("subtype") or ""
+            )
             code = "quota" if etat.get("quota") else classer_erreur(message)
-            return [Evenement("erreur", code=code, texte=message, cout=float(ligne.get("total_cost_usd") or 0))]
+            return [
+                Evenement("erreur", code=code, texte=message, cout=float(ligne.get("total_cost_usd") or 0))
+            ]
         sortie = []
         final = str(ligne.get("result") or "")
         if not etat["texte"] and final:
@@ -132,7 +140,11 @@ class MoteurClaudeCLI:
             await proc.wait()
             if not etat["resultat"]:
                 erreur = (await proc.stderr.read()).decode(errors="replace").strip()
-                yield Evenement("erreur", code=classer_erreur(erreur), texte=erreur or f"Le CLI s'est arrêté (code {proc.returncode}).")
+                yield Evenement(
+                    "erreur",
+                    code=classer_erreur(erreur),
+                    texte=erreur or f"Le CLI s'est arrêté (code {proc.returncode}).",
+                )
         finally:
             if proc.returncode is None:
                 with contextlib.suppress(ProcessLookupError):
@@ -142,7 +154,10 @@ class MoteurClaudeCLI:
     async def version(self) -> str:
         try:
             proc = await asyncio.create_subprocess_exec(
-                self.config.claude_bin, "--version", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL
+                self.config.claude_bin,
+                "--version",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.DEVNULL,
             )
             sortie, _ = await asyncio.wait_for(proc.communicate(), 10)
             return sortie.decode().strip()

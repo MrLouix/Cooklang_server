@@ -54,7 +54,9 @@ class Gestionnaire:
     # --- cycle de vie -----------------------------------------------------
     def demarrer(self) -> None:
         # Un tour interrompu par un redémarrage ne reprendra pas : on le dit clairement.
-        self.ctx.base.executer("UPDATE messages SET etat = 'erreur', erreur = 'interrompu' WHERE etat = 'en_cours'")
+        self.ctx.base.executer(
+            "UPDATE messages SET etat = 'erreur', erreur = 'interrompu' WHERE etat = 'en_cours'"
+        )
         self.file, self.actifs = asyncio.Queue(), {}
         self._tache = asyncio.create_task(self._boucle())
 
@@ -86,7 +88,10 @@ class Gestionnaire:
         if discussion_id in self.actifs:
             raise Occupe()
         pieces = pieces or []
-        premier = base.ligne("SELECT count(*) AS n FROM messages WHERE discussion_id = ?", (discussion_id,))["n"] == 0
+        premier = (
+            base.ligne("SELECT count(*) AS n FROM messages WHERE discussion_id = ?", (discussion_id,))["n"]
+            == 0
+        )
         instant = maintenant()
         curseur = base.executer(
             "INSERT INTO messages(discussion_id, role, contenu, pieces, cree_le) VALUES(?, 'user', ?, ?, ?)",
@@ -102,7 +107,9 @@ class Gestionnaire:
             provisoire = " ".join(texte.split())[:60] or "Nouvelle discussion"
             base.executer("UPDATE discussions SET titre = ? WHERE id = ?", (provisoire, discussion_id))
         if not discussion["domaine"]:
-            domaine = detecter_domaine(f"{discussion['recette_contexte'] or ''} {texte}", self.ctx.parametres.domaines())
+            domaine = detecter_domaine(
+                f"{discussion['recette_contexte'] or ''} {texte}", self.ctx.parametres.domaines()
+            )
             if domaine:
                 base.executer("UPDATE discussions SET domaine = ? WHERE id = ?", (domaine, discussion_id))
         tour = Tour(reponse.lastrowid, discussion_id, texte)
@@ -149,19 +156,27 @@ class Gestionnaire:
             if historique:
                 parties.append(
                     "La session précédente n'est plus disponible. Voici l'historique de cette discussion, "
-                    "à reprendre comme si elle n'avait pas été interrompue :\n\n<historique>\n" + historique + "\n</historique>\n\nNouveau message de Louis :"
+                    "à reprendre comme si elle n'avait pas été interrompue :\n\n<historique>\n"
+                    + historique
+                    + "\n</historique>\n\nNouveau message de Louis :"
                 )
-        premier = self.ctx.base.ligne(
-            "SELECT count(*) AS n FROM messages WHERE discussion_id = ? AND role = 'user' AND id < ?",
-            (tour.discussion_id, tour.message_id),
-        )["n"] == 1
+        premier = (
+            self.ctx.base.ligne(
+                "SELECT count(*) AS n FROM messages WHERE discussion_id = ? AND role = 'user' AND id < ?",
+                (tour.discussion_id, tour.message_id),
+            )["n"]
+            == 1
+        )
         if discussion["recette_contexte"] and (premier or avec_historique):
             parties.append(
                 f"Recette en contexte : `{self.ctx.config.recettes / discussion['recette_contexte']}` — lis-la avec Read avant de répondre."
             )
         parties.append(tour.question)
         if tour.pieces:
-            parties.append("Pièces jointes à lire avec Read :\n" + "\n".join(f"- `pieces/{p['fichier']}` ({p['nom']})" for p in tour.pieces))
+            parties.append(
+                "Pièces jointes à lire avec Read :\n"
+                + "\n".join(f"- `pieces/{p['fichier']}` ({p['nom']})" for p in tour.pieces)
+            )
         return "\n\n".join(parties)
 
     def _historique(self, tour: Tour) -> str:
@@ -170,7 +185,9 @@ class Gestionnaire:
             (tour.discussion_id, tour.message_id, tour.message_utilisateur),
         )
         blocs = [
-            ("Louis : " if m["role"] == "user" else "Assistant : ") + self.ctx.propositions.developper(m["contenu"]) for m in messages
+            ("Louis : " if m["role"] == "user" else "Assistant : ")
+            + self.ctx.propositions.developper(m["contenu"])
+            for m in messages
         ]
         texte = "\n\n".join(blocs)
         return texte[-HISTORIQUE_MAX:]
@@ -196,14 +213,20 @@ class Gestionnaire:
                             tour.texte += ev.texte
                             tour.publier("texte", {"delta": ev.texte})
                             if time.monotonic() - dernier_enregistrement > 1:
-                                base.executer("UPDATE messages SET contenu = ? WHERE id = ?", (tour.texte, tour.message_id))
+                                base.executer(
+                                    "UPDATE messages SET contenu = ? WHERE id = ?",
+                                    (tour.texte, tour.message_id),
+                                )
                                 dernier_enregistrement = time.monotonic()
                         elif ev.type == "outil":
                             outil = {"nom": ev.nom, "detail": ev.detail}
                             tour.outils.append(outil)
                             tour.publier("outil", outil)
                         elif ev.type == "session" and ev.session and not demande.ephemere:
-                            base.executer("UPDATE discussions SET session_claude = ? WHERE id = ?", (ev.session, tour.discussion_id))
+                            base.executer(
+                                "UPDATE discussions SET session_claude = ? WHERE id = ?",
+                                (ev.session, tour.discussion_id),
+                            )
                         elif ev.type in ("fin", "erreur"):
                             return ev
         except TimeoutError:
@@ -234,7 +257,9 @@ class Gestionnaire:
             self._echec(tour, final)
             return
 
-        contenu, propositions = self.ctx.propositions.extraire(tour.texte, tour.message_id, tour.discussion_id)
+        contenu, propositions = self.ctx.propositions.extraire(
+            tour.texte, tour.message_id, tour.discussion_id
+        )
         cout = final.cout
         if discussion["titre_auto"] and self.ctx.config.titre_auto:
             deja = base.ligne(
@@ -245,7 +270,13 @@ class Gestionnaire:
                 cout += await self._titrer(tour)
         base.executer(
             "UPDATE messages SET contenu = ?, outils = ?, cout = ?, etat = 'termine', duree_ms = ? WHERE id = ?",
-            (contenu, json.dumps(tour.outils, ensure_ascii=False), cout, int((time.monotonic() - tour.debut) * 1000), tour.message_id),
+            (
+                contenu,
+                json.dumps(tour.outils, ensure_ascii=False),
+                cout,
+                int((time.monotonic() - tour.debut) * 1000),
+                tour.message_id,
+            ),
         )
         base.executer("INSERT INTO messages_fts(rowid, contenu) VALUES(?, ?)", (tour.message_id, contenu))
         base.executer(
@@ -276,7 +307,10 @@ class Gestionnaire:
             return 0.0
         titre = " ".join(titre.split()).strip("\"'«» .")[:80]
         if titre:
-            self.ctx.base.executer("UPDATE discussions SET titre = ? WHERE id = ? AND titre_auto = 1", (titre, tour.discussion_id))
+            self.ctx.base.executer(
+                "UPDATE discussions SET titre = ? WHERE id = ? AND titre_auto = 1",
+                (titre, tour.discussion_id),
+            )
         return cout
 
     def _echec(self, tour: Tour, ev: Evenement) -> None:
@@ -298,7 +332,9 @@ class Gestionnaire:
 
     # --- lecture ----------------------------------------------------------
     def message(self, identifiant: int) -> dict:
-        m = decoder(self.ctx.base.ligne("SELECT * FROM messages WHERE id = ?", (identifiant,)), "pieces", "outils")
+        m = decoder(
+            self.ctx.base.ligne("SELECT * FROM messages WHERE id = ?", (identifiant,)), "pieces", "outils"
+        )
         m["propositions"] = self.ctx.propositions.du_message(identifiant)
         if m["erreur"]:
             m["erreur_message"] = MESSAGES_ERREUR.get(m["erreur"], MESSAGES_ERREUR["moteur"])

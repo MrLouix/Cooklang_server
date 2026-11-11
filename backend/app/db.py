@@ -93,7 +93,11 @@ def requete_fts(texte: str) -> str:
         mot = "".join(c for c in mot if c.isalnum())
         if not mot:
             continue
-        variantes = {mot, mot.replace("oe", "œ").replace("ae", "æ"), mot.replace("œ", "oe").replace("æ", "ae")}
+        variantes = {
+            mot,
+            mot.replace("oe", "œ").replace("ae", "æ"),
+            mot.replace("œ", "oe").replace("æ", "ae"),
+        }
         termes.append("(" + " OR ".join(f'"{v}"*' for v in sorted(variantes)) + ")")
     return " AND ".join(termes)
 

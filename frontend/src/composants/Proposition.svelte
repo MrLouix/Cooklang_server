@@ -100,13 +100,17 @@
   {#if blocage?.code === 'syntaxe' || blocage?.code === 'gabarit'}
     <div class="encart danger" role="alert">
       <strong>{blocage.message}</strong>
-      <ul>{#each blocage.erreurs as e}<li>{e}</li>{/each}</ul>
+      <ul>
+        {#each blocage.erreurs as e}<li>{e}</li>{/each}
+      </ul>
       {#if blocage.code === 'syntaxe'}L'erreur a été renvoyée à l'assistant.{/if}
     </div>
   {:else if blocage?.code === 'exclusions'}
     <div class="encart danger" role="alert">
       <strong>Exclusion stricte</strong>
-      <ul>{#each blocage.alertes as a}<li>{a.ingredient} — {a.exclusion}</li>{/each}</ul>
+      <ul>
+        {#each blocage.alertes as a}<li>{a.ingredient} — {a.exclusion}</li>{/each}
+      </ul>
       <button class="btn petit danger" style="margin-top:8px" disabled={occupe} onclick={() => valider({ confirmer_exclusions: true })}>
         Enregistrer quand même
       </button>
@@ -114,7 +118,12 @@
   {:else if blocage?.code === 'fichier_modifie'}
     <div class="encart alerte" role="alert">
       <strong>{blocage.message}</strong>
-      <button class="btn petit" style="margin-top:8px" disabled={occupe} onclick={() => valider({ forcer: true, confirmer_exclusions: true })}>
+      <button
+        class="btn petit"
+        style="margin-top:8px"
+        disabled={occupe}
+        onclick={() => valider({ forcer: true, confirmer_exclusions: true })}
+      >
         Remplacer la version actuelle
       </button>
     </div>
@@ -140,12 +149,40 @@
 </section>
 
 <style>
-  .proposition { border: 1.5px solid var(--accent); border-radius: var(--rayon); padding: 12px; margin: 10px 0; background: var(--surface); }
-  header { margin-bottom: 10px; }
-  .chemin { font-weight: 650; margin-top: 6px; word-break: break-word; }
-  details summary { cursor: pointer; padding: 6px 0; }
-  .apercu-md { padding: 10px; background: var(--surface-2); border-radius: 10px; }
-  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-  .actions .principal { flex: 1 1 100%; }
-  .actions .btn:not(.principal) { flex: 1; }
+  .proposition {
+    border: 1.5px solid var(--accent);
+    border-radius: var(--rayon);
+    padding: 12px;
+    margin: 10px 0;
+    background: var(--surface);
+  }
+  header {
+    margin-bottom: 10px;
+  }
+  .chemin {
+    font-weight: 650;
+    margin-top: 6px;
+    word-break: break-word;
+  }
+  details summary {
+    cursor: pointer;
+    padding: 6px 0;
+  }
+  .apercu-md {
+    padding: 10px;
+    background: var(--surface-2);
+    border-radius: 10px;
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .actions .principal {
+    flex: 1 1 100%;
+  }
+  .actions .btn:not(.principal) {
+    flex: 1;
+  }
 </style>

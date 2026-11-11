@@ -59,7 +59,11 @@
 {#if session === null}
   <div class="vide">Chargement…</div>
 {:else if !session.connecte}
-  <form class="corps" onsubmit={connecter} style="display:flex;flex-direction:column;justify-content:center;gap:12px;max-width:360px;margin:auto;width:100%">
+  <form
+    class="corps"
+    onsubmit={connecter}
+    style="display:flex;flex-direction:column;justify-content:center;gap:12px;max-width:360px;margin:auto;width:100%"
+  >
     <h1>Aide Culinaire</h1>
     <input type="password" class="champ" placeholder="Mot de passe" bind:value={motDePasse} autocomplete="current-password" />
     {#if erreur}<div class="encart danger">{erreur}</div>{/if}
@@ -93,7 +97,11 @@
   {#if !dansChat}
     <nav class="bas" aria-label="Navigation principale">
       {#each ONGLETS as onglet (onglet.ecran)}
-        <a href={'#/' + onglet.ecran} class:actif={app.route.ecran === onglet.ecran} aria-current={app.route.ecran === onglet.ecran ? 'page' : undefined}>
+        <a
+          href={'#/' + onglet.ecran}
+          class:actif={app.route.ecran === onglet.ecran}
+          aria-current={app.route.ecran === onglet.ecran ? 'page' : undefined}
+        >
           <span aria-hidden="true">{onglet.icone}</span>{onglet.nom}
         </a>
       {/each}

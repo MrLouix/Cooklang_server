@@ -31,7 +31,9 @@ class Synchro:
     def drive_actif(self) -> bool:
         return bool(self.config.rclone_dest) and shutil.which("rclone") is not None
 
-    def journaliser(self, cible: str, resultat: str, fichiers: list[str] | None = None, erreur: str | None = None) -> None:
+    def journaliser(
+        self, cible: str, resultat: str, fichiers: list[str] | None = None, erreur: str | None = None
+    ) -> None:
         self.base.executer(
             "INSERT INTO synchro(date, cible, fichiers, resultat, erreur) VALUES(?, ?, ?, ?, ?)",
             (maintenant(), cible, json.dumps(sorted(fichiers or []), ensure_ascii=False), resultat, erreur),
@@ -59,9 +61,13 @@ class Synchro:
 
     def comparer(self) -> dict[str, str]:
         """Différences local → Drive : {chemin: '*' différent | '+' absent du Drive | '-' absent en local}."""
-        proc = self._rclone("check", str(self.recettes.racine), self.config.rclone_dest, "--combined", "-", *FILTRES)
+        proc = self._rclone(
+            "check", str(self.recettes.racine), self.config.rclone_dest, "--combined", "-", *FILTRES
+        )
         if proc.returncode != 0 and "differences found" not in proc.stderr:
-            raise RuntimeError(proc.stderr.strip().splitlines()[-1] if proc.stderr.strip() else "rclone check a échoué")
+            raise RuntimeError(
+                proc.stderr.strip().splitlines()[-1] if proc.stderr.strip() else "rclone check a échoué"
+            )
         differences = {}
         for ligne in proc.stdout.splitlines():
             if len(ligne) > 2 and ligne[0] in "*+-":
@@ -114,11 +120,17 @@ class Synchro:
                     self._telecharger(chemin, self.recettes.racine / chemin)
                     bilan["importes"].append(chemin)
             if bilan["importes"]:
-                self.recettes.commiter_tout("Modification externe (Google Drive)\n\n" + "\n".join(bilan["importes"]))
+                self.recettes.commiter_tout(
+                    "Modification externe (Google Drive)\n\n" + "\n".join(bilan["importes"])
+                )
                 self.journaliser("import", "ok", bilan["importes"])
             if bilan["conflits"]:
-                self.recettes.commiter_tout("Conflit : version Google Drive conservée\n\n" + "\n".join(bilan["conflits"]))
-                self.journaliser("conflit", "conflit", bilan["conflits"], "Deux versions conservées : à départager.")
+                self.recettes.commiter_tout(
+                    "Conflit : version Google Drive conservée\n\n" + "\n".join(bilan["conflits"])
+                )
+                self.journaliser(
+                    "conflit", "conflit", bilan["conflits"], "Deux versions conservées : à départager."
+                )
         return bilan
 
     # --- après commit -----------------------------------------------------

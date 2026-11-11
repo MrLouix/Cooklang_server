@@ -60,7 +60,10 @@ def lister(q: str = "", archivees: bool = False, ctx: Contexte = Depends(context
     """D-1 : tri par dernière activité, recherche par titre et par contenu."""
     extraits: dict[str, str] = {}
     if q.strip():
-        ids = {d["id"] for d in ctx.base.lignes("SELECT id FROM discussions WHERE titre LIKE ?", (f"%{q.strip()}%",))}
+        ids = {
+            d["id"]
+            for d in ctx.base.lignes("SELECT id FROM discussions WHERE titre LIKE ?", (f"%{q.strip()}%",))
+        }
         requete = requete_fts(q)
         if requete:
             for ligne in ctx.base.lignes(
@@ -70,7 +73,10 @@ def lister(q: str = "", archivees: bool = False, ctx: Contexte = Depends(context
             ):
                 extraits.setdefault(ligne["id"], ligne["extrait"])
         ids |= set(extraits)
-    lignes = ctx.base.lignes("SELECT id FROM discussions WHERE archivee = ? ORDER BY modifie_le DESC, cree_le DESC", (int(archivees),))
+    lignes = ctx.base.lignes(
+        "SELECT id FROM discussions WHERE archivee = ? ORDER BY modifie_le DESC, cree_le DESC",
+        (int(archivees),),
+    )
     resultat = []
     for ligne in lignes:
         if q.strip() and ligne["id"] not in ids:
@@ -89,10 +95,22 @@ def creer(corps: Creation, ctx: Contexte = Depends(contexte)) -> dict:
         if ctx.recettes.lire(recette) is None:
             raise HTTPException(404, "Recette introuvable.")
     identifiant, instant = nouvel_identifiant(), maintenant()
-    titre = corps.titre or (f"À propos de {recette.rsplit('/', 1)[-1].removesuffix('.cook')}" if recette else "Nouvelle discussion")
+    titre = corps.titre or (
+        f"À propos de {recette.rsplit('/', 1)[-1].removesuffix('.cook')}"
+        if recette
+        else "Nouvelle discussion"
+    )
     ctx.base.executer(
         "INSERT INTO discussions(id, titre, titre_auto, modele, recette_contexte, cree_le, modifie_le) VALUES(?, ?, ?, ?, ?, ?, ?)",
-        (identifiant, titre, int(not corps.titre and not recette), _modele(ctx, corps.modele), recette, instant, instant),
+        (
+            identifiant,
+            titre,
+            int(not corps.titre and not recette),
+            _modele(ctx, corps.modele),
+            recette,
+            instant,
+            instant,
+        ),
     )
     return _discussion(ctx, identifiant)
 
@@ -113,13 +131,21 @@ def modifier(identifiant: str, corps: Modification, ctx: Contexte = Depends(cont
         titre = " ".join(corps.titre.split())[:120]
         if not titre:
             raise HTTPException(400, "Le titre ne peut pas être vide.")
-        ctx.base.executer("UPDATE discussions SET titre = ?, titre_auto = 0 WHERE id = ?", (titre, identifiant))
+        ctx.base.executer(
+            "UPDATE discussions SET titre = ?, titre_auto = 0 WHERE id = ?", (titre, identifiant)
+        )
     if corps.archivee is not None:
-        ctx.base.executer("UPDATE discussions SET archivee = ? WHERE id = ?", (int(corps.archivee), identifiant))
+        ctx.base.executer(
+            "UPDATE discussions SET archivee = ? WHERE id = ?", (int(corps.archivee), identifiant)
+        )
     if corps.modele is not None:
-        ctx.base.executer("UPDATE discussions SET modele = ? WHERE id = ?", (_modele(ctx, corps.modele), identifiant))
+        ctx.base.executer(
+            "UPDATE discussions SET modele = ? WHERE id = ?", (_modele(ctx, corps.modele), identifiant)
+        )
     if corps.domaine is not None:
-        ctx.base.executer("UPDATE discussions SET domaine = ? WHERE id = ?", (corps.domaine or None, identifiant))
+        ctx.base.executer(
+            "UPDATE discussions SET domaine = ? WHERE id = ?", (corps.domaine or None, identifiant)
+        )
     return _discussion(ctx, identifiant)
 
 
@@ -129,7 +155,8 @@ def supprimer(identifiant: str, ctx: Contexte = Depends(contexte)) -> Response:
     if identifiant in ctx.tours.actifs:
         raise HTTPException(409, "Une réponse est en cours dans cette discussion.")
     ctx.base.executer(
-        "DELETE FROM messages_fts WHERE rowid IN (SELECT id FROM messages WHERE discussion_id = ?)", (identifiant,)
+        "DELETE FROM messages_fts WHERE rowid IN (SELECT id FROM messages WHERE discussion_id = ?)",
+        (identifiant,),
     )
     ctx.base.executer("DELETE FROM discussions WHERE id = ?", (identifiant,))
     return Response(status_code=204)
@@ -143,10 +170,19 @@ def dupliquer(identifiant: str, corps: Duplication, ctx: Contexte = Depends(cont
     nouveau, instant = nouvel_identifiant(), maintenant()
     ctx.base.executer(
         "INSERT INTO discussions(id, titre, titre_auto, modele, domaine, recette_contexte, cree_le, modifie_le) VALUES(?, ?, 0, ?, ?, ?, ?, ?)",
-        (nouveau, f"{source['titre']} (copie)"[:120], source["modele"], source["domaine"], source["recette_contexte"], instant, instant),
+        (
+            nouveau,
+            f"{source['titre']} (copie)"[:120],
+            source["modele"],
+            source["domaine"],
+            source["recette_contexte"],
+            instant,
+            instant,
+        ),
     )
     for m in ctx.base.lignes(
-        "SELECT * FROM messages WHERE discussion_id = ? AND id <= ? AND etat = 'termine' ORDER BY id", (identifiant, limite)
+        "SELECT * FROM messages WHERE discussion_id = ? AND id <= ? AND etat = 'termine' ORDER BY id",
+        (identifiant, limite),
     ):
         contenu = ctx.propositions.developper(m["contenu"]) if m["role"] == "assistant" else m["contenu"]
         curseur = ctx.base.executer(
@@ -156,10 +192,13 @@ def dupliquer(identifiant: str, corps: Duplication, ctx: Contexte = Depends(cont
         if m["role"] == "assistant":
             contenu, _ = ctx.propositions.extraire(contenu, curseur.lastrowid, nouveau)
             ctx.base.executer(
-                "UPDATE propositions SET etat = 'rejetee', traite_le = ? WHERE message_id = ?", (instant, curseur.lastrowid)
+                "UPDATE propositions SET etat = 'rejetee', traite_le = ? WHERE message_id = ?",
+                (instant, curseur.lastrowid),
             )
         ctx.base.executer("UPDATE messages SET contenu = ? WHERE id = ?", (contenu, curseur.lastrowid))
-        ctx.base.executer("INSERT INTO messages_fts(rowid, contenu) VALUES(?, ?)", (curseur.lastrowid, contenu))
+        ctx.base.executer(
+            "INSERT INTO messages_fts(rowid, contenu) VALUES(?, ?)", (curseur.lastrowid, contenu)
+        )
     return _discussion(ctx, nouveau)
 
 
@@ -173,7 +212,13 @@ async def envoyer(identifiant: str, corps: Envoi, ctx: Contexte = Depends(contex
         fichier = str(piece.get("fichier", ""))
         if "/" in fichier or not (ctx.config.agent / "pieces" / fichier).is_file():
             raise HTTPException(400, "Pièce jointe inconnue.")
-        pieces.append({"fichier": fichier, "nom": str(piece.get("nom", fichier))[:200], "type": str(piece.get("type", ""))[:100]})
+        pieces.append(
+            {
+                "fichier": fichier,
+                "nom": str(piece.get("nom", fichier))[:200],
+                "type": str(piece.get("type", ""))[:100],
+            }
+        )
     try:
         tour = ctx.tours.soumettre(identifiant, corps.texte.strip(), pieces)
     except KeyError:
@@ -190,4 +235,3 @@ async def flux(identifiant: str, ctx: Contexte = Depends(contexte)):
     if tour is None:
         return Response(status_code=204)
     return sse(ctx.tours.flux(tour))
-

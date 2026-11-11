@@ -1,0 +1,24 @@
+# docker compose -f deploiement/compose.yaml up -d
+# Le port n'est publié que sur la boucle locale : c'est `tailscale serve` qui l'expose en HTTPS sur le VPN (X-1).
+services:
+  aide-culinaire:
+    build:
+      context: ..
+      dockerfile: deploiement/Dockerfile
+    image: aide-culinaire:local
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"
+    env_file: .env
+    environment:
+      GIT_SSH_COMMAND: ssh -i /run/secrets/cle_deploiement -o IdentitiesOnly=yes -o UserKnownHostsFile=/run/secrets/known_hosts
+      RCLONE_CONFIG: /run/secrets/rclone.conf
+    volumes:
+      - /srv/aide-culinaire:/srv/aide-culinaire
+      # Sessions du CLI (D-7) : persistantes et incluses dans la sauvegarde.
+      - /srv/aide-culinaire/claude:/home/cuisine/.claude
+      # Secrets hors dépôt, droits 600, propriétaire uid 1000 (X-4).
+      - ./secrets:/run/secrets
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }

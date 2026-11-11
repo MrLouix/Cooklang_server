@@ -7,7 +7,11 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "eslint . && prettier --check .",
+    "format": "prettier --write .",
+    "check": "svelte-check --fail-on-warnings",
+    "e2e": "node e2e/parcours.cjs"
   },
   "dependencies": {
     "diff": "^7.0.0",
@@ -15,8 +19,17 @@
     "marked": "^15.0.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
+    "eslint": "^10.14.0",
+    "eslint-plugin-svelte": "^3.24.1",
+    "globals": "^17.14.0",
+    "jsdom": "^31.0.0",
+    "playwright": "^1.63.0",
+    "prettier": "^3.9.10",
+    "prettier-plugin-svelte": "^4.1.1",
     "svelte": "^5.15.0",
+    "svelte-check": "^4.7.8",
     "vite": "^6.0.0",
     "vitest": "^3.0.0"
   }

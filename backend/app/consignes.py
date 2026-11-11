@@ -52,11 +52,18 @@ TITRE = (
 )
 
 
-def composer(config: Config, domaine: str | None = None, texte_domaine: str = "", textes_transversaux: dict[str, str] | None = None) -> str:
+def composer(
+    config: Config,
+    domaine: str | None = None,
+    texte_domaine: str = "",
+    textes_transversaux: dict[str, str] | None = None,
+) -> str:
     parties = [PROTOCOLE.replace("{recettes}", str(config.recettes))]
     for nom, texte in (textes_transversaux or {}).items():
         if texte.strip():
             parties.append(f"## Préférences de Louis — {nom}\n\n{texte.strip()}")
     if domaine and texte_domaine.strip():
-        parties.append(f"## Préférences de Louis — {domaine}\n\nCette discussion porte sur ce domaine.\n\n{texte_domaine.strip()}")
+        parties.append(
+            f"## Préférences de Louis — {domaine}\n\nCette discussion porte sur ce domaine.\n\n{texte_domaine.strip()}"
+        )
     return "\n\n".join(parties)

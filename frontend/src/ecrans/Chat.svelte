@@ -141,7 +141,10 @@
 
   onMount(() => {
     charger();
-    api.get('/api/sante').then((s) => (sante = s)).catch(() => {});
+    api
+      .get('/api/sante')
+      .then((s) => (sante = s))
+      .catch(() => {});
     const reveil = () => {
       if (document.visibilityState === 'visible' && (occupe || discussion?.en_cours)) {
         annulation?.abort();
@@ -195,7 +198,8 @@
         <div class="message">
           {#if m.outils?.length}
             <div class="outils">
-              {#each m.outils as o}<span class="etiquette" title={o.detail}>{o.nom}{o.detail ? ' · ' + o.detail.slice(0, 40) : ''}</span>{/each}
+              {#each m.outils as o}<span class="etiquette" title={o.detail}>{o.nom}{o.detail ? ' · ' + o.detail.slice(0, 40) : ''}</span
+                >{/each}
             </div>
           {/if}
           {#each segments(m.contenu) as s}
@@ -227,11 +231,17 @@
           </div>
         {/if}
         {#each segments(direct.texte, true) as s}
-          {#if s.genre === 'texte'}<Markdown source={s.texte} />{:else}<div class="encart alerte">✍️ Rédaction du fichier proposé…</div>{/if}
+          {#if s.genre === 'texte'}<Markdown source={s.texte} />{:else}<div class="encart alerte">
+              ✍️ Rédaction du fichier proposé…
+            </div>{/if}
         {/each}
         <div class="secondaire attente">
           <span class="points" aria-hidden="true"><i></i><i></i><i></i></span>
-          {direct.position > 0 ? `En file d'attente (${direct.position} tour${direct.position > 1 ? 's' : ''} avant)` : direct.texte ? '' : "L'assistant réfléchit…"}
+          {direct.position > 0
+            ? `En file d'attente (${direct.position} tour${direct.position > 1 ? 's' : ''} avant)`
+            : direct.texte
+              ? ''
+              : "L'assistant réfléchit…"}
         </div>
       </div>
     {/if}
@@ -247,12 +257,24 @@
     {/if}
     <div class="ligne">
       <input type="file" bind:this={fichier} onchange={joindre} accept="image/*,.pdf,.txt,.md,.cook" multiple hidden />
-      <button class="btn icone" onclick={() => fichier.click()} disabled={!app.enLigne} aria-label="Joindre une photo ou un fichier">📎</button>
+      <button class="btn icone" onclick={() => fichier.click()} disabled={!app.enLigne} aria-label="Joindre une photo ou un fichier"
+        >📎</button
+      >
       <textarea
-        bind:this={champ} bind:value={saisie} rows="1" onkeydown={touche} onpaste={coller}
-        placeholder={app.enLigne ? 'Écris ou colle une recette…' : 'Hors connexion'} disabled={!app.enLigne} aria-label="Message"
-      ></textarea>
-      <button class="btn principal icone" onclick={() => envoyer()} disabled={occupe || !app.enLigne || (!saisie.trim() && !pieces.length)} aria-label="Envoyer">➤</button>
+        bind:this={champ}
+        bind:value={saisie}
+        rows="1"
+        onkeydown={touche}
+        onpaste={coller}
+        placeholder={app.enLigne ? 'Écris ou colle une recette…' : 'Hors connexion'}
+        disabled={!app.enLigne}
+        aria-label="Message"></textarea>
+      <button
+        class="btn principal icone"
+        onclick={() => envoyer()}
+        disabled={occupe || !app.enLigne || (!saisie.trim() && !pieces.length)}
+        aria-label="Envoyer">➤</button
+      >
     </div>
   </footer>
 </div>
@@ -262,11 +284,21 @@
     <div class="feuille" role="dialog" aria-label="Options de la discussion">
       <h2>{discussion.titre}</h2>
       <label class="secondaire" for="modele">Modèle</label>
-      <select id="modele" value={discussion.modele} onchange={(e) => modifier({ modele: e.target.value }, 'Modèle changé pour les prochains tours.')} style="margin-bottom:10px">
+      <select
+        id="modele"
+        value={discussion.modele}
+        onchange={(e) => modifier({ modele: e.target.value }, 'Modèle changé pour les prochains tours.')}
+        style="margin-bottom:10px"
+      >
         {#each sante?.modeles ?? [discussion.modele] as modele}<option value={modele}>{modele}</option>{/each}
       </select>
       <label class="secondaire" for="domaine">Domaine (préférences injectées)</label>
-      <select id="domaine" value={discussion.domaine ?? ''} onchange={(e) => modifier({ domaine: e.target.value })} style="margin-bottom:14px">
+      <select
+        id="domaine"
+        value={discussion.domaine ?? ''}
+        onchange={(e) => modifier({ domaine: e.target.value })}
+        style="margin-bottom:14px"
+      >
         <option value="">Aucun</option>
         {#each sante?.domaines ?? [] as domaine}<option value={domaine}>{domaine}</option>{/each}
       </select>
@@ -281,23 +313,114 @@
 {/if}
 
 <style>
-  .fil { display: flex; flex-direction: column; gap: 16px; }
-  .message { max-width: 100%; }
-  .message.moi { align-self: flex-end; max-width: 88%; }
-  .bulle { background: var(--accent-doux); padding: 10px 14px; border-radius: 16px 16px 4px 16px; white-space: pre-wrap; word-break: break-word; }
-  .pieces { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; margin-bottom: 6px; }
-  .pieces img { max-width: 160px; max-height: 160px; border-radius: 12px; object-fit: cover; }
-  .outils { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
-  .pied { display: flex; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: 0.78rem; }
-  .lien { background: none; border: 0; color: var(--texte-2); text-decoration: underline; cursor: pointer; padding: 0; font-size: inherit; }
-  .attente { display: flex; align-items: center; gap: 8px; margin-top: 6px; min-height: 24px; }
-  .points { display: inline-flex; gap: 4px; }
-  .points i { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 1.2s infinite ease-in-out; }
-  .points i:nth-child(2) { animation-delay: 0.2s; }
-  .points i:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes pulse { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
-  @media (prefers-reduced-motion: reduce) { .points i { animation: none; } }
-  .saisie { border-top: 1px solid var(--bord); padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: var(--surface); flex: none; }
-  .saisie .ligne { display: flex; gap: 8px; align-items: flex-end; }
-  .saisie textarea { flex: 1; max-height: 40dvh; field-sizing: content; min-height: 44px; }
+  .fil {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .message {
+    max-width: 100%;
+  }
+  .message.moi {
+    align-self: flex-end;
+    max-width: 88%;
+  }
+  .bulle {
+    background: var(--accent-doux);
+    padding: 10px 14px;
+    border-radius: 16px 16px 4px 16px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .pieces {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    margin-bottom: 6px;
+  }
+  .pieces img {
+    max-width: 160px;
+    max-height: 160px;
+    border-radius: 12px;
+    object-fit: cover;
+  }
+  .outils {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .pied {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 6px;
+    font-size: 0.78rem;
+  }
+  .lien {
+    background: none;
+    border: 0;
+    color: var(--texte-2);
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+    font-size: inherit;
+  }
+  .attente {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    min-height: 24px;
+  }
+  .points {
+    display: inline-flex;
+    gap: 4px;
+  }
+  .points i {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 1.2s infinite ease-in-out;
+  }
+  .points i:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+  .points i:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+  @keyframes pulse {
+    0%,
+    80%,
+    100% {
+      opacity: 0.25;
+    }
+    40% {
+      opacity: 1;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .points i {
+      animation: none;
+    }
+  }
+  .saisie {
+    border-top: 1px solid var(--bord);
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    background: var(--surface);
+    flex: none;
+  }
+  .saisie .ligne {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+  .saisie textarea {
+    flex: 1;
+    max-height: 40dvh;
+    field-sizing: content;
+    min-height: 44px;
+  }
 </style>

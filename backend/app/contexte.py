@@ -43,7 +43,9 @@ def creer_moteur(config: Config) -> Engine:
 def creer_contexte(config: Config, moteur: Engine | None = None) -> Contexte:
     recettes, agent = initialiser(config)
     base = Base(config.base)
-    ctx = Contexte(config=config, base=base, moteur=moteur or creer_moteur(config), recettes=recettes, agent=agent)
+    ctx = Contexte(
+        config=config, base=base, moteur=moteur or creer_moteur(config), recettes=recettes, agent=agent
+    )
     ctx.parametres = Parametres(agent)
     ctx.parametres.initialiser()
     ctx.references = References(base, agent)

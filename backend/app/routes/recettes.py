@@ -17,7 +17,9 @@ class Restauration(BaseModel):
 def _recettes(ctx: Contexte) -> list[str]:
     racine = ctx.recettes.racine
     return sorted(
-        str(f.relative_to(racine)) for f in racine.rglob("*.cook") if not any(p.startswith(".") for p in f.relative_to(racine).parts)
+        str(f.relative_to(racine))
+        for f in racine.rglob("*.cook")
+        if not any(p.startswith(".") for p in f.relative_to(racine).parts)
     )
 
 
@@ -46,7 +48,9 @@ def arborescence(q: str = "", ctx: Contexte = Depends(contexte)) -> dict:
                     entree["extrait"] = ligne.strip()[:160]
                     break
         categories.setdefault(categorie or "Sans catégorie", []).append(entree)
-    return {"categories": [{"nom": nom, "recettes": recettes} for nom, recettes in sorted(categories.items())]}
+    return {
+        "categories": [{"nom": nom, "recettes": recettes} for nom, recettes in sorted(categories.items())]
+    }
 
 
 @routeur.get("/{chemin:path}/historique")
@@ -73,7 +77,9 @@ def discussions(chemin: str, ctx: Contexte = Depends(contexte)) -> list[dict]:
 
 
 @routeur.post("/{chemin:path}/restaurer")
-def restaurer(chemin: str, corps: Restauration, taches: BackgroundTasks, ctx: Contexte = Depends(contexte)) -> dict:
+def restaurer(
+    chemin: str, corps: Restauration, taches: BackgroundTasks, ctx: Contexte = Depends(contexte)
+) -> dict:
     """F-8 : restaure une version par un nouveau commit, sans réécrire l'historique."""
     chemin_sur(ctx.recettes, chemin)
     with ctx.synchro.verrou:

@@ -1,0 +1,31 @@
+# pre-commit install — mêmes contrôles que la CI, avant chaque commit.
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        exclude: \.(md|cook)$
+      - id: check-yaml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=500]
+      - id: detect-private-key
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.6
+    hooks:
+      - id: ruff
+        args: [--config, backend/pyproject.toml]
+        files: ^backend/
+      - id: ruff-format
+        args: [--config, backend/pyproject.toml]
+        files: ^backend/
+  - repo: local
+    hooks:
+      - id: frontend-lint
+        name: ESLint et Prettier (frontend)
+        entry: npm --prefix frontend run lint
+        language: system
+        files: ^frontend/
+        pass_filenames: false

@@ -1,0 +1,7 @@
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.cook text eol=lf
+backend/uv.lock linguist-generated
+frontend/package-lock.json linguist-generated
+backend/outils/package-lock.json linguist-generated

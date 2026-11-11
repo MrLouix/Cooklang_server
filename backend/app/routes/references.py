@@ -39,7 +39,9 @@ async def ajouter(
             if len(contenu) > 100 * 1024 * 1024:
                 raise HTTPException(413, "Document trop volumineux (100 Mo au plus).")
             identifiant = ctx.references.enregistrer_document(fichier.filename or "document", contenu)
-            taches.add_task(ctx.references.convertir_document, identifiant)  # conversion et OCR en tâche de fond
+            taches.add_task(
+                ctx.references.convertir_document, identifiant
+            )  # conversion et OCR en tâche de fond
         elif url:
             identifiant = ctx.references.ajouter_lien(url.strip(), mode, titre)
         else:

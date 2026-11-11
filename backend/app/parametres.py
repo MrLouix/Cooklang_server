@@ -140,20 +140,37 @@ def valider(valeurs: dict[str, Any]) -> dict[str, Any]:
         niveaux = {x["valeur"] for x in reglage.get("niveaux", [])}
         if controle == "liste" and v in permis:
             propres[cle] = v
-        elif controle == "nombre" and isinstance(v, int | float) and not isinstance(v, bool) and reglage["min"] <= v <= reglage["max"]:
+        elif (
+            controle == "nombre"
+            and isinstance(v, int | float)
+            and not isinstance(v, bool)
+            and reglage["min"] <= v <= reglage["max"]
+        ):
             propres[cle] = v
         elif controle == "case" and isinstance(v, bool):
             propres[cle] = v
         elif controle == "cases" and isinstance(v, list) and set(v) <= permis:
             propres[cle] = v
-        elif controle == "cases_niveau" and isinstance(v, dict) and set(v) <= set(reglage["options"]) and set(v.values()) <= niveaux:
+        elif (
+            controle == "cases_niveau"
+            and isinstance(v, dict)
+            and set(v) <= set(reglage["options"])
+            and set(v.values()) <= niveaux
+        ):
             propres[cle] = v
-        elif controle == "etiquettes_niveau" and isinstance(v, list) and all(
-            isinstance(e, dict) and str(e.get("nom", "")).strip() and e.get("niveau") in niveaux for e in v
+        elif (
+            controle == "etiquettes_niveau"
+            and isinstance(v, list)
+            and all(
+                isinstance(e, dict) and str(e.get("nom", "")).strip() and e.get("niveau") in niveaux
+                for e in v
+            )
         ):
             propres[cle] = [{"nom": str(e["nom"]).strip()[:60], "niveau": e["niveau"]} for e in v]
-        elif controle == "textes_domaines" and isinstance(v, dict) and all(
-            isinstance(k, str) and k.strip() and isinstance(t, str) for k, t in v.items()
+        elif (
+            controle == "textes_domaines"
+            and isinstance(v, dict)
+            and all(isinstance(k, str) and k.strip() and isinstance(t, str) for k, t in v.items())
         ):
             propres[cle] = {k.strip()[:60]: t for k, t in v.items()}
         else:
@@ -257,7 +274,9 @@ REGIMES = {
 }
 
 
-def verifier_exclusions(valeurs: dict[str, Any], ingredients: list[dict], synonymes: dict[str, list[str]]) -> list[dict]:
+def verifier_exclusions(
+    valeurs: dict[str, Any], ingredients: list[dict], synonymes: dict[str, list[str]]
+) -> list[dict]:
     """Ingrédients qui heurtent une exclusion stricte. Filet de sécurité, pas garantie."""
     regles: dict[str, list[str]] = {}
     for nom, niveau in valeurs.get("exclusions", {}).items():
@@ -295,12 +314,19 @@ class Parametres:
 
     def enregistrer(self, valeurs: dict[str, Any]) -> dict[str, Any]:
         propres = valider(valeurs)
-        self.depot.ecrire("parametres.json", json.dumps(propres, ensure_ascii=False, indent=2) + "\n", "Paramètres modifiés")
-        self.depot.ecrire("memoire/parametres.md", generer_markdown(propres), "Consignes de paramètres régénérées")
+        self.depot.ecrire(
+            "parametres.json", json.dumps(propres, ensure_ascii=False, indent=2) + "\n", "Paramètres modifiés"
+        )
+        self.depot.ecrire(
+            "memoire/parametres.md", generer_markdown(propres), "Consignes de paramètres régénérées"
+        )
         return propres
 
     def initialiser(self) -> None:
-        if self.depot.lire("parametres.json") is None or not (self.depot.lire("memoire/parametres.md") or "").strip():
+        if (
+            self.depot.lire("parametres.json") is None
+            or not (self.depot.lire("memoire/parametres.md") or "").strip()
+        ):
             self.enregistrer(self.lire())
         if self.depot.lire("exclusions.json") is None:
             self.depot.ecrire(

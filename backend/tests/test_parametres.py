@@ -10,7 +10,11 @@ def lire_md(client, nom="parametres.md"):
 
 def test_defauts_et_schema(client):
     r = client.get("/api/parametres").json()
-    assert r["valeurs"]["oeufs"] == "grammes_nombre" and r["valeurs"]["poids_oeuf"] == 50 and r["valeurs"] == r["defauts"]
+    assert (
+        r["valeurs"]["oeufs"] == "grammes_nombre"
+        and r["valeurs"]["poids_oeuf"] == 50
+        and r["valeurs"] == r["defauts"]
+    )
     schema = client.get("/api/parametres/schema").json()
     assert [s["cle"] for s in schema["sections"]] == ["unites", "alimentation", "domaines"]
     md = lire_md(client)
@@ -30,7 +34,12 @@ def test_reglage_oeufs_applique_au_tour_suivant(client):
 
 
 def test_valeurs_refusees(client):
-    for mauvais in ({"oeufs": "douzaine"}, {"poids_oeuf": 90}, {"exclusions": {"porc": "parfois"}}, {"substitutions": ["x"]}):
+    for mauvais in (
+        {"oeufs": "douzaine"},
+        {"poids_oeuf": 90},
+        {"exclusions": {"porc": "parfois"}},
+        {"substitutions": ["x"]},
+    ):
         assert client.put("/api/parametres", json=mauvais).status_code == 422, mauvais
 
 
@@ -76,17 +85,32 @@ def test_exclusion_stricte_bloque_la_validation(client):
     _, p = client.proposer()
     r = client.post(f"/api/propositions/{p['id']}/valider")
     assert r.status_code == 409 and r.json()["code"] == "exclusions"
-    assert {(a["ingredient"], a["exclusion"]) for a in r.json()["alertes"]} == {("beurre", "lactose"), ("levure fraîche", "levure fraîche")}
+    assert {(a["ingredient"], a["exclusion"]) for a in r.json()["alertes"]} == {
+        ("beurre", "lactose"),
+        ("levure fraîche", "levure fraîche"),
+    }
     assert not (client.ctx.recettes.racine / p["chemin"]).exists()
-    assert client.post(f"/api/propositions/{p['id']}/valider", params={"confirmer_exclusions": True}).status_code == 200
+    assert (
+        client.post(f"/api/propositions/{p['id']}/valider", params={"confirmer_exclusions": True}).status_code
+        == 200
+    )
 
 
 def test_correspondance_des_exclusions():
-    v = P.defauts() | {"exclusions": {"fruits à coque": "stricte", "lactose": "stricte", "gluten": "stricte"}, "regime": "vegetarien"}
+    v = P.defauts() | {
+        "exclusions": {"fruits à coque": "stricte", "lactose": "stricte", "gluten": "stricte"},
+        "regime": "vegetarien",
+    }
     ingredients = [{"nom": n} for n in ("noix de coco râpée", "lait d'amande", "Noisettes torréfiées", "beurre de cacao",
                                         "farine de riz", "lardons fumés", "Crème liquide 30 %", "sel")]  # fmt: skip
-    trouves = {(a["ingredient"], a["exclusion"]) for a in P.verifier_exclusions(v, ingredients, P.SYNONYMES_DEFAUT)}
-    assert trouves == {("Noisettes torréfiées", "fruits à coque"), ("lardons fumés", "régime (porc)"), ("Crème liquide 30 %", "lactose")}
+    trouves = {
+        (a["ingredient"], a["exclusion"]) for a in P.verifier_exclusions(v, ingredients, P.SYNONYMES_DEFAUT)
+    }
+    assert trouves == {
+        ("Noisettes torréfiées", "fruits à coque"),
+        ("lardons fumés", "régime (porc)"),
+        ("Crème liquide 30 %", "lactose"),
+    }
 
 
 def test_detection_du_domaine():
@@ -98,9 +122,17 @@ def test_detection_du_domaine():
 
 def test_memoire_lecture_edition_et_proposition(client):
     fichiers = {m["fichier"]: m["contenu"] for m in client.get("/api/memoire").json()}
-    assert "KitchenAid Classic 5K45SS" in fichiers["materiel.md"] and "yaourtière" in fichiers["materiel.md"].lower()
-    assert "huile neutre" in fichiers["preferences.md"].lower() and "proposition avant écriture" in fichiers["preferences.md"]
-    r = client.put("/api/memoire/essais.md", json={"contenu": "# Essais\n\n- Brioche à 60 % d'œufs : réussie."})
+    assert (
+        "KitchenAid Classic 5K45SS" in fichiers["materiel.md"]
+        and "yaourtière" in fichiers["materiel.md"].lower()
+    )
+    assert (
+        "huile neutre" in fichiers["preferences.md"].lower()
+        and "proposition avant écriture" in fichiers["preferences.md"]
+    )
+    r = client.put(
+        "/api/memoire/essais.md", json={"contenu": "# Essais\n\n- Brioche à 60 % d'œufs : réussie."}
+    )
     assert "réussie" in r.json()["contenu"]
     assert client.put("/api/memoire/parametres.md", json={"contenu": "x"}).status_code == 404
     assert client.get("/api/memoire/..%2FCLAUDE.md").status_code == 404
@@ -114,7 +146,9 @@ def test_memoire_lecture_edition_et_proposition(client):
 
 def test_mot_de_passe(tmp_path, moteur):
     """X-2 : mot de passe optionnel, session par cookie ; aucune route de l'API n'est ouverte sans lui."""
-    config = Config(racine=tmp_path / "srv", moteur="factice", front=tmp_path / "absent", mot_de_passe="secret")
+    config = Config(
+        racine=tmp_path / "srv", moteur="factice", front=tmp_path / "absent", mot_de_passe="secret"
+    )
     with Client(creer_application(config, moteur), base_url="https://testserver") as c:
         assert c.get("/api/session").json() == {"protege": True, "connecte": False}
         for chemin in ("/api/discussions", "/api/recettes", "/api/sante", "/api/memoire", "/api/parametres"):

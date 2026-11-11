@@ -38,7 +38,9 @@ class Config:
     jeton_fichier: str = field(default_factory=lambda: _env("JETON_FICHIER", "/run/secrets/claude_token"))
     front: Path = field(default_factory=lambda: Path(_env("FRONT", str(RACINE_CODE / "frontend" / "dist"))))
     agent_modele: Path = field(default_factory=lambda: Path(_env("AGENT_MODELE", str(RACINE_CODE / "agent"))))
-    outils_node: Path = field(default_factory=lambda: Path(_env("OUTILS_NODE", str(RACINE_CODE / "backend" / "outils"))))
+    outils_node: Path = field(
+        default_factory=lambda: Path(_env("OUTILS_NODE", str(RACINE_CODE / "backend" / "outils")))
+    )
 
     @property
     def recettes(self) -> Path:

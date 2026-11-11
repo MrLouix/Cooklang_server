@@ -200,12 +200,16 @@ def url_publique(url: str) -> None:
 
 
 class References:
-    def __init__(self, base: Base, depot: Depot, client: httpx.Client | None = None, verifier_hote: bool = True):
+    def __init__(
+        self, base: Base, depot: Depot, client: httpx.Client | None = None, verifier_hote: bool = True
+    ):
         self.base = base
         self.depot = depot
         self.racine = depot.racine / "references"
         self.client = client or httpx.Client(
-            follow_redirects=True, timeout=30, headers={"User-Agent": "Mozilla/5.0 (compatible; lecteur-de-references)"}
+            follow_redirects=True,
+            timeout=30,
+            headers={"User-Agent": "Mozilla/5.0 (compatible; lecteur-de-references)"},
         )
         self.verifier_hote = verifier_hote
 
@@ -228,12 +232,22 @@ class References:
     def _creer(self, type_: str, titre: str, **champs) -> int:
         curseur = self.base.executer(
             "INSERT INTO sources(type, titre, chemin, url, mode, etat, ajoutee_le) VALUES(?, ?, ?, ?, ?, ?, ?)",
-            (type_, titre, champs.get("chemin"), champs.get("url"), champs.get("mode"), champs.get("etat", "en_attente"), maintenant()),
+            (
+                type_,
+                titre,
+                champs.get("chemin"),
+                champs.get("url"),
+                champs.get("mode"),
+                champs.get("etat", "en_attente"),
+                maintenant(),
+            ),
         )
         return curseur.lastrowid
 
     def _etat(self, identifiant: int, etat: str, erreur: str | None = None, **champs) -> None:
-        self.base.executer("UPDATE sources SET etat = ?, erreur = ? WHERE id = ?", (etat, erreur, identifiant))
+        self.base.executer(
+            "UPDATE sources SET etat = ?, erreur = ? WHERE id = ?", (etat, erreur, identifiant)
+        )
         for cle, valeur in champs.items():
             self.base.executer(f"UPDATE sources SET {cle} = ? WHERE id = ?", (valeur, identifiant))
 
@@ -324,7 +338,9 @@ class References:
         titre_page = ""
         if "html" in reponse.headers.get("content-type", ""):
             titre_page, _ = html_en_markdown(reponse.text)
-        identifiant = self._creer("lien", titre or titre_page or urlparse(url).hostname, url=url, mode=mode, etat="accessible")
+        identifiant = self._creer(
+            "lien", titre or titre_page or urlparse(url).hostname, url=url, mode=mode, etat="accessible"
+        )
         if mode == "copie_locale":
             self._copier_lien(identifiant, reponse)
         self.publier()
@@ -340,7 +356,9 @@ class References:
         else:
             pages = [(None, html_en_markdown(reponse.text)[1])]
         corps = "\n\n".join((f"<!-- page {p} -->\n\n{t}" if p else t) for p, t in pages)
-        (dossier / "texte.md").write_text(f"# {source['titre']}\n\nSource : {source['url']}\n\n{corps}\n", encoding="utf-8")
+        (dossier / "texte.md").write_text(
+            f"# {source['titre']}\n\nSource : {source['url']}\n\n{corps}\n", encoding="utf-8"
+        )
         self._indexer(identifiant, source["titre"], pages)
         self._etat(identifiant, "indexe", chemin=f"references/liens/{identifiant}/texte.md")
 
@@ -366,7 +384,9 @@ class References:
     # --- fiches (B-8) -----------------------------------------------------
     def fiches(self) -> list[dict]:
         dossier = self.racine / "fiches"
-        return [{"nom": f.stem, "chemin": f"references/fiches/{f.name}"} for f in sorted(dossier.glob("*.md"))]
+        return [
+            {"nom": f.stem, "chemin": f"references/fiches/{f.name}"} for f in sorted(dossier.glob("*.md"))
+        ]
 
     def lire_fiche(self, nom: str) -> str | None:
         return self.depot.lire(f"references/fiches/{nom_sur(nom)}.md")
@@ -376,7 +396,9 @@ class References:
         if erreurs:
             raise ErreurReference(" ".join(erreurs))
         nom = nom_sur(nom)
-        sha = self.depot.ecrire(f"references/fiches/{nom}.md", contenu, message or f"Fiche de référence : {nom}")
+        sha = self.depot.ecrire(
+            f"references/fiches/{nom}.md", contenu, message or f"Fiche de référence : {nom}"
+        )
         self.indexer_fiche(nom)
         self.publier()
         return sha
@@ -392,7 +414,8 @@ class References:
         self.base.executer("DELETE FROM passages WHERE source_id = ?", (f"fiche:{nom}",))
         for passage in decouper(contenu):
             self.base.executer(
-                "INSERT INTO passages(source_id, titre, page, texte) VALUES(?, ?, NULL, ?)", (f"fiche:{nom}", f"Fiche {nom}", passage)
+                "INSERT INTO passages(source_id, titre, page, texte) VALUES(?, ?, NULL, ?)",
+                (f"fiche:{nom}", f"Fiche {nom}", passage),
             )
 
     def reindexer_fiches(self) -> None:
@@ -419,8 +442,14 @@ class References:
     def publier(self) -> None:
         sources = [s for s in self.lister() if s["actif"]]
         liens = [s for s in self.lister() if s["type"] == "lien"]
-        liste = [{"titre": s["titre"], "url": s["url"], "mode": s["mode"], "actif": s["actif"]} for s in liens]
-        self.depot.ecrire("references/liens.json", json.dumps(liste, ensure_ascii=False, indent=2) + "\n", "Liste des liens de référence")
+        liste = [
+            {"titre": s["titre"], "url": s["url"], "mode": s["mode"], "actif": s["actif"]} for s in liens
+        ]
+        self.depot.ecrire(
+            "references/liens.json",
+            json.dumps(liste, ensure_ascii=False, indent=2) + "\n",
+            "Liste des liens de référence",
+        )
         lignes = [
             "# Base documentaire",
             "",
@@ -440,9 +469,14 @@ class References:
         documents = [s for s in sources if s["chemin"] and s["etat"] == "indexe"]
         if documents:
             lignes += ["", "## Documents et copies locales", ""]
-            lignes += [f"- {s['titre']} : `{s['chemin']}`" + (f" (source : {s['url']})" if s["url"] else "") for s in documents]
+            lignes += [
+                f"- {s['titre']} : `{s['chemin']}`" + (f" (source : {s['url']})" if s["url"] else "")
+                for s in documents
+            ]
         demande = [s for s in sources if s["type"] == "lien" and s["mode"] == "a_la_demande"]
         if demande:
             lignes += ["", "## Sites à interroger en priorité lors d'une recherche web", ""]
             lignes += [f"- {s['titre']} : {s['url']}" for s in demande]
-        self.depot.ecrire("memoire/references.md", "\n".join(lignes) + "\n", "Consignes de la base documentaire régénérées")
+        self.depot.ecrire(
+            "memoire/references.md", "\n".join(lignes) + "\n", "Consignes de la base documentaire régénérées"
+        )

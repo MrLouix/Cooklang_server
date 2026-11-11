@@ -21,7 +21,9 @@ def lire_sse(reponse) -> list[tuple[str, dict]]:
 
 class Client(TestClient):
     def envoyer(self, discussion: str, texte: str, pieces=None) -> list[tuple[str, dict]]:
-        with self.stream("POST", f"/api/discussions/{discussion}/messages", json={"texte": texte, "pieces": pieces or []}) as r:
+        with self.stream(
+            "POST", f"/api/discussions/{discussion}/messages", json={"texte": texte, "pieces": pieces or []}
+        ) as r:
             assert r.status_code == 200, r.read()
             return lire_sse(r)
 
@@ -46,7 +48,12 @@ class Client(TestClient):
 
 @pytest.fixture
 def config(tmp_path):
-    return Config(racine=tmp_path / "srv", moteur="factice", front=tmp_path / "absent", jeton_fichier=str(tmp_path / "jeton"))
+    return Config(
+        racine=tmp_path / "srv",
+        moteur="factice",
+        front=tmp_path / "absent",
+        jeton_fichier=str(tmp_path / "jeton"),
+    )
 
 
 @pytest.fixture

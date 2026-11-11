@@ -109,7 +109,9 @@ def test_tour_survit_a_la_deconnexion(client):
     with client.stream("POST", f"/api/discussions/{d}/messages", json={"texte": "long"}) as r:
         next(r.iter_lines())  # on lit une ligne puis on coupe
     assert client.post(f"/api/discussions/{d}/messages", json={"texte": "bis"}).status_code == 409
-    dernier = client.attendre(lambda: (m := client.get(f"/api/discussions/{d}").json()["messages"][-1])["etat"] == "termine" and m)
+    dernier = client.attendre(
+        lambda: (m := client.get(f"/api/discussions/{d}").json()["messages"][-1])["etat"] == "termine" and m
+    )
     assert dernier["contenu"] == "x" * 400
 
 
@@ -137,7 +139,10 @@ def test_message_interrompu_marque_au_redemarrage(config, moteur):
     ctx = app.state.ctx
     with Client(app) as c:
         d = c.discussion()
-    ctx.base.executer("INSERT INTO messages(discussion_id, role, etat, cree_le) VALUES(?, 'assistant', 'en_cours', 'x')", (d,))
+    ctx.base.executer(
+        "INSERT INTO messages(discussion_id, role, etat, cree_le) VALUES(?, 'assistant', 'en_cours', 'x')",
+        (d,),
+    )
     with Client(app) as c:
         m = c.get(f"/api/discussions/{d}").json()["messages"][-1]
         assert m["etat"] == "erreur" and "redémarré" in m["erreur_message"]
@@ -149,16 +154,36 @@ def test_interpretation_stream_json():
     etat = {"texte": "", "resultat": False}
     lignes = [
         {"type": "system", "subtype": "init", "session_id": "s1"},
-        {"type": "stream_event", "event": {"type": "content_block_delta", "delta": {"type": "text_delta", "text": "Bon"}}},
-        {"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "WebSearch", "input": {"query": "brioche"}}]}},
+        {
+            "type": "stream_event",
+            "event": {"type": "content_block_delta", "delta": {"type": "text_delta", "text": "Bon"}},
+        },
+        {
+            "type": "assistant",
+            "message": {
+                "content": [{"type": "tool_use", "name": "WebSearch", "input": {"query": "brioche"}}]
+            },
+        },
         {"type": "stream_event", "event": {"type": "content_block_start", "content_block": {"type": "text"}}},
-        {"type": "stream_event", "event": {"type": "content_block_delta", "delta": {"type": "text_delta", "text": "jour"}}},
-        {"type": "result", "subtype": "success", "is_error": False, "total_cost_usd": 0.5, "session_id": "s1", "result": "x"},
+        {
+            "type": "stream_event",
+            "event": {"type": "content_block_delta", "delta": {"type": "text_delta", "text": "jour"}},
+        },
+        {
+            "type": "result",
+            "subtype": "success",
+            "is_error": False,
+            "total_cost_usd": 0.5,
+            "session_id": "s1",
+            "result": "x",
+        },
     ]
     evs = [e for ligne in lignes for e in interpreter(ligne, etat)]
     assert [e.type for e in evs] == ["session", "texte", "outil", "texte", "texte", "fin"]
     assert etat["texte"] == "Bon\n\njour" and evs[2].detail == "brioche" and evs[-1].cout == 0.5
-    erreur = interpreter({"type": "result", "is_error": True, "errors": ["No conversation found with session ID: x"]}, etat)
+    erreur = interpreter(
+        {"type": "result", "is_error": True, "errors": ["No conversation found with session ID: x"]}, etat
+    )
     assert erreur[0].code == "session_introuvable"
 
 

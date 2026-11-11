@@ -20,7 +20,9 @@ def sse(flux: AsyncIterator[tuple[str, dict]]) -> StreamingResponse:
             yield f"event: {genre}\ndata: {json.dumps(donnees, ensure_ascii=False)}\n\n"
 
     return StreamingResponse(
-        generer(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+        generer(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
 
 

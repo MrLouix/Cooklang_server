@@ -48,7 +48,9 @@ def creer_application(config: Config | None = None, moteur: Engine | None = None
         tache.cancel()
         await ctx.tours.arreter()
 
-    app = FastAPI(title="Aide Culinaire", lifespan=cycle, docs_url="/api/docs", openapi_url="/api/openapi.json")
+    app = FastAPI(
+        title="Aide Culinaire", lifespan=cycle, docs_url="/api/docs", openapi_url="/api/openapi.json"
+    )
     app.state.ctx = ctx
 
     @app.middleware("http")

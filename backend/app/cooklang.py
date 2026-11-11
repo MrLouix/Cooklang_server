@@ -35,7 +35,11 @@ def _entrees_rapport(rapport: str) -> list[tuple[str, str]]:
         if bloc.startswith(("Warning:", "Error:")):
             genre, _, reste = bloc.partition(":")
             lignes = [ligne.strip(" ╰▶") for ligne in reste.strip().splitlines()]
-            utiles = [ligne for ligne in lignes if ligne and not ligne.startswith(("╭", "──", "Help:")) and "│" not in ligne]
+            utiles = [
+                ligne
+                for ligne in lignes
+                if ligne and not ligne.startswith(("╭", "──", "Help:")) and "│" not in ligne
+            ]
             entrees.append((genre, " — ".join(utiles)))
     return entrees
 
@@ -71,7 +75,9 @@ def analyser(source: str, outils: Path, exiger_titre: bool = True) -> Analyse:
             analyse.erreurs.append(f"Ligne {numero} : accolade non fermée.")
         for nom, valeur, unite in _MINUTEUR.findall(ligne):
             if not re.fullmatch(r"\d+", valeur.strip()):
-                analyse.avertissements.append(f"Ligne {numero} : le minuteur ~{nom} doit avoir une valeur entière unique.")
+                analyse.avertissements.append(
+                    f"Ligne {numero} : le minuteur ~{nom} doit avoir une valeur entière unique."
+                )
             if not (unite or "").strip():
                 analyse.avertissements.append(f"Ligne {numero} : le minuteur ~{nom} n'a pas d'unité.")
     for ingredient in analyse.ingredients:

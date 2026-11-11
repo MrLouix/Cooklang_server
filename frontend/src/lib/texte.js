@@ -102,4 +102,7 @@ export function dateCourte(iso) {
 }
 
 export const dateComplete = (iso) => (iso ? complet.format(new Date(iso)) : '');
-export const euros = (montant) => `${Number(montant || 0).toFixed(2).replace('.', ',')} $`;
+export const euros = (montant) =>
+  `${Number(montant || 0)
+    .toFixed(2)
+    .replace('.', ',')} $`;

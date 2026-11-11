@@ -4,12 +4,20 @@ const COQUILLE = ['/', '/manifest.webmanifest', '/icone.svg', '/icone-192.png'];
 const LECTURES = /^\/api\/(discussions|recettes|memoire|parametres|references)(\/|$|\?)/;
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(COQUILLE)).then(() => self.skipWaiting()));
+  e.waitUntil(
+    caches
+      .open(VERSION)
+      .then((c) => c.addAll(COQUILLE))
+      .then(() => self.skipWaiting()),
+  );
 });
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then((cles) => Promise.all(cles.filter((c) => c !== VERSION).map((c) => caches.delete(c)))).then(() => self.clients.claim()),
+    caches
+      .keys()
+      .then((cles) => Promise.all(cles.filter((c) => c !== VERSION).map((c) => caches.delete(c))))
+      .then(() => self.clients.claim()),
   );
 });
 

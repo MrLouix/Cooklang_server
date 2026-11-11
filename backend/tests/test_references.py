@@ -59,16 +59,31 @@ def test_documents_import_indexation_recherche(client):
     md = "# Notes brioche\n\nHydratation totale d'une brioche : 55 à 65 %.\n\nTempérature à cœur : 92 °C."
     r = client.post("/api/references", files={"fichier": ("notes brioche.md", md.encode(), "text/markdown")})
     assert r.status_code == 201
-    pdf = client.post("/api/references", files={"fichier": ("cristallisation.pdf", pdf_simple("Chocolat noir tempere a 31 degres"), "application/pdf")}).json()
+    pdf = client.post(
+        "/api/references",
+        files={
+            "fichier": (
+                "cristallisation.pdf",
+                pdf_simple("Chocolat noir tempere a 31 degres"),
+                "application/pdf",
+            )
+        },
+    ).json()
     epub = io.BytesIO()
     with zipfile.ZipFile(epub, "w") as z:
-        z.writestr("ch1.xhtml", "<html><body><h1>Farines</h1><p>La T45 contient 9 % de protéines.</p></body></html>")
-    client.post("/api/references", files={"fichier": ("ingredients.epub", epub.getvalue(), "application/epub+zip")})
+        z.writestr(
+            "ch1.xhtml", "<html><body><h1>Farines</h1><p>La T45 contient 9 % de protéines.</p></body></html>"
+        )
+    client.post(
+        "/api/references", files={"fichier": ("ingredients.epub", epub.getvalue(), "application/epub+zip")}
+    )
     assert client.post("/api/references", files={"fichier": ("x.docx", b"x", "x")}).status_code == 422
     sources = client.get("/api/references").json()["sources"]
     assert {s["etat"] for s in sources} == {"indexe"} and all(s["passages"] >= 1 for s in sources)
     dossier = client.ctx.config.agent / "references" / "documents" / str(pdf["id"])
-    assert (dossier / "original.pdf").exists() and "<!-- page 1 -->" in (dossier / "texte.md").read_text()  # original conservé, pages repérées
+    assert (dossier / "original.pdf").exists() and "<!-- page 1 -->" in (
+        dossier / "texte.md"
+    ).read_text()  # original conservé, pages repérées
     trouves = client.get("/api/references/recherche", params={"q": "température coeur"}).json()
     assert trouves and "92" in trouves[0]["extrait"] and trouves[0]["titre"] == "notes brioche"
     assert client.get("/api/references/recherche", params={"q": "tempere"}).json()[0]["page"] == 1
@@ -85,21 +100,41 @@ def test_documents_import_indexation_recherche(client):
 
 def test_liens_verification_et_modes(client):
     """B-3, B-11 : l'URL doit répondre, sans compte ni paiement."""
-    assert client.post("/api/references", data={"url": "https://absent.example/x", "mode": "a_la_demande"}).status_code == 422
+    assert (
+        client.post(
+            "/api/references", data={"url": "https://absent.example/x", "mode": "a_la_demande"}
+        ).status_code
+        == 422
+    )
     r = client.post("/api/references", data={"url": "https://payant.example/x", "mode": "a_la_demande"})
     assert r.status_code == 422 and "paiement" in r.json()["detail"]
-    assert client.post("/api/references", data={"url": "ftp://ok.example", "mode": "a_la_demande"}).status_code == 422
-    demande = client.post("/api/references", data={"url": "https://ok.example/pro", "mode": "a_la_demande"}).json()
+    assert (
+        client.post("/api/references", data={"url": "ftp://ok.example", "mode": "a_la_demande"}).status_code
+        == 422
+    )
+    demande = client.post(
+        "/api/references", data={"url": "https://ok.example/pro", "mode": "a_la_demande"}
+    ).json()
     assert demande["titre"] == "Baker's percentage" and demande["etat"] == "accessible"
-    copie = client.post("/api/references", data={"url": "https://ok.example/ddt", "mode": "copie_locale", "titre": "Températures de pâte"}).json()
+    copie = client.post(
+        "/api/references",
+        data={"url": "https://ok.example/ddt", "mode": "copie_locale", "titre": "Températures de pâte"},
+    ).json()
     assert copie["etat"] == "indexe"
-    assert client.get("/api/references/recherche", params={"q": "dough temperature"}).json()[0]["titre"] == "Températures de pâte"
+    assert (
+        client.get("/api/references/recherche", params={"q": "dough temperature"}).json()[0]["titre"]
+        == "Températures de pâte"
+    )
     consignes = (client.ctx.config.agent / "memoire" / "references.md").read_text()
     assert "https://ok.example/pro" in consignes and f"references/liens/{copie['id']}/texte.md" in consignes
     assert "non sourcé" in consignes and "sans trancher en silence" in consignes
-    assert "references/liens.json" in client.ctx.agent.fichiers()  # la liste des liens est versionnée, pas les copies
+    assert (
+        "references/liens.json" in client.ctx.agent.fichiers()
+    )  # la liste des liens est versionnée, pas les copies
     # un lien devenu inaccessible est signalé
-    client.ctx.base.executer("UPDATE sources SET url = 'https://absent.example/x' WHERE id = ?", (demande["id"],))
+    client.ctx.base.executer(
+        "UPDATE sources SET url = 'https://absent.example/x' WHERE id = ?", (demande["id"],)
+    )
     assert client.post(f"/api/references/{demande['id']}/rafraichir").json()["etat"] == "inaccessible"
 
 
@@ -112,14 +147,24 @@ def test_url_privee_refusee():
 
 
 def test_fiches_gabarit_edition_et_proposition(client):
-    assert client.put("/api/references/fiches/brioche", json={"contenu": "# Brioche\n\nlibre"}).status_code == 422
-    fiche = GABARIT_FICHE.replace("{titre}", "Brioche").replace("| Hydratation |  |  |", "| Hydratation | 55-65 % | King Arthur |")
+    assert (
+        client.put("/api/references/fiches/brioche", json={"contenu": "# Brioche\n\nlibre"}).status_code
+        == 422
+    )
+    fiche = GABARIT_FICHE.replace("{titre}", "Brioche").replace(
+        "| Hydratation |  |  |", "| Hydratation | 55-65 % | King Arthur |"
+    )
     assert client.put("/api/references/fiches/Brioche", json={"contenu": fiche}).status_code == 200
-    assert client.get("/api/references").json()["fiches"] == [{"nom": "brioche", "chemin": "references/fiches/brioche.md"}]
+    assert client.get("/api/references").json()["fiches"] == [
+        {"nom": "brioche", "chemin": "references/fiches/brioche.md"}
+    ]
     assert "references/fiches/brioche.md" in client.ctx.agent.fichiers()  # versionnée (B-9)
     trouves = client.get("/api/references/recherche", params={"q": "hydratation"}).json()
     assert trouves[0]["type"] == "fiche"  # les fiches passent en premier (B-5)
-    assert "`references/fiches/brioche.md`" in (client.ctx.config.agent / "memoire" / "references.md").read_text()
+    assert (
+        "`references/fiches/brioche.md`"
+        in (client.ctx.config.agent / "memoire" / "references.md").read_text()
+    )
     client.delete("/api/references/fiches/brioche")
     assert client.get("/api/references/fiches/brioche").status_code == 404
     # proposée par l'assistant : rien n'entre dans les fiches sans validation (B-8)

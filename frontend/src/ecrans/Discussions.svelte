@@ -30,15 +30,27 @@
 <div class="ecran">
   <header class="entete">
     <h1>Discussions</h1>
-    <button class="btn petit" class:principal={archivees} onclick={() => (archivees = !archivees)} aria-pressed={archivees}>Archivées</button>
+    <button class="btn petit" class:principal={archivees} onclick={() => (archivees = !archivees)} aria-pressed={archivees}
+      >Archivées</button
+    >
   </header>
   <div class="corps">
-    <input type="search" placeholder="Rechercher dans les titres et les messages" bind:value={recherche} aria-label="Rechercher une discussion" style="margin-bottom:12px" />
+    <input
+      type="search"
+      placeholder="Rechercher dans les titres et les messages"
+      bind:value={recherche}
+      aria-label="Rechercher une discussion"
+      style="margin-bottom:12px"
+    />
     {#if discussions === null}
       <div class="vide">Chargement…</div>
     {:else if discussions.length === 0}
       <div class="vide">
-        {recherche ? 'Aucune discussion ne correspond.' : archivees ? 'Aucune discussion archivée.' : 'Aucune discussion. Soumets une recette pour commencer.'}
+        {recherche
+          ? 'Aucune discussion ne correspond.'
+          : archivees
+            ? 'Aucune discussion archivée.'
+            : 'Aucune discussion. Soumets une recette pour commencer.'}
       </div>
     {:else}
       <ul class="liste">
@@ -66,6 +78,14 @@
 </div>
 
 <style>
-  .nouveau { margin: 0 14px 12px; flex: none; }
-  .extrait { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
+  .nouveau {
+    margin: 0 14px 12px;
+    flex: none;
+  }
+  .extrait {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-top: 2px;
+  }
 </style>

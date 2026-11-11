@@ -44,10 +44,14 @@ def test_commit_pousse_et_miroir(client):
     r = enregistrer(client)
     assert (client.drive / CHEMIN).read_text() == r["proposition"]["contenu"]
     assert not (client.drive / ".git").exists()
-    log = subprocess.run(["git", "log", "--format=%s", "main"], cwd=client.nu, capture_output=True, text=True).stdout
+    log = subprocess.run(
+        ["git", "log", "--format=%s", "main"], cwd=client.nu, capture_output=True, text=True
+    ).stdout
     assert f"Création : {CHEMIN}" in log
     journal = client.get("/api/synchro").json()
-    assert {j["cible"] for j in journal["journal"]} >= {"github", "drive"} and all(j["resultat"] == "ok" for j in journal["journal"])
+    assert {j["cible"] for j in journal["journal"]} >= {"github", "drive"} and all(
+        j["resultat"] == "ok" for j in journal["journal"]
+    )
     assert journal["etat"]["dernier_commit"] == journal["etat"]["dernier_commit_synchronise"]
 
 
@@ -72,7 +76,11 @@ def test_conflit_conserve_les_deux_versions(client):
     _, p = client.proposer("modifie ma brioche")
     r = client.post(f"/api/propositions/{p['id']}/valider").json()
     conflits = [f for f in client.ctx.recettes.fichiers() if ".conflit-" in f]
-    assert r["conflits"] == conflits and len(conflits) == 1 and "Version du PC" in (client.ctx.recettes.racine / conflits[0]).read_text()
+    assert (
+        r["conflits"] == conflits
+        and len(conflits) == 1
+        and "Version du PC" in (client.ctx.recettes.racine / conflits[0]).read_text()
+    )
     assert "{35%g}" in (client.ctx.recettes.racine / CHEMIN).read_text()
     assert client.get("/api/synchro").json()["etat"]["conflits"] == conflits
     assert (client.drive / conflits[0]).exists()  # la copie de conflit est aussi dans le miroir
