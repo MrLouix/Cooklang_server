@@ -219,3 +219,20 @@ Cas à ne pas oublier : déconnexion du client en plein tour, deux messages envo
 2. Le texte exact des instructions du projet claude.ai et le skill `recette-cook`, à déposer dans `agent-modele/`.
 3. Le relevé du crédit mensuel `claude -p` de ton compte, au début de la phase 1.
 4. Le mini-PC avec Docker et Tailscale, la clé de déploiement GitHub et la configuration rclone de ton compte Drive, pour la phase 4.
+
+## 9. Écarts constatés à la réalisation
+
+Le plan ci-dessus a été suivi ; ces points diffèrent de ce qu'il annonçait.
+
+| Sujet | Plan | Réalisé | Raison |
+| --- | --- | --- | --- |
+| Modèle de `agent/` | `agent-modele/` | `agent/`, à la racine du dépôt | C'est là que les instructions et le skill ont été déposés |
+| Validation Cooklang | CookCLI | Paquet npm officiel `@cooklang/cooklang` (cooklang-rs en WASM) | C'est le parseur que cite le skill ; Node est déjà dans l'image pour le CLI. Tout avertissement du parseur est bloquant, comme le demande le skill |
+| Pièces jointes | `data/pieces/` | `agent/pieces/` (ignoré par Git) | L'outil `Read` du CLI est borné à son répertoire de travail |
+| Table `tours` | Table dédiée | État porté par `messages.etat`, file en mémoire | Un tour interrompu ne reprend pas : il est marqué en erreur au redémarrage |
+| Bloc `proposition` dans les messages | Conservé tel quel | Remplacé en base par un marqueur `[[proposition:ID]]` | La PWA affiche une carte sans réanalyser le texte ; le bloc est reconstitué quand l'historique est réinjecté |
+| Textes de domaine (PA-4) | Injectés selon le domaine | Idem, sauf « Matériel » et « Forme des réponses », toujours injectés | Ils s'appliquent à toute discussion |
+| Conflit Drive (S-4) | — | La version du Drive est rangée dans `<Nom>.conflit-<date>.cook`, celle du serveur garde le nom d'origine | Une seule règle, sans question posée en plein enregistrement |
+| Second moteur par clé API (M-1) | Codé si la maquette l'exige | Interface prête, implémentation non écrite | Le crédit réel n'est pas encore relevé |
+| Migrations SQL numérotées | Prévues | Schéma unique créé au démarrage | Pas encore de version antérieure à migrer |
+| Phase 8, illustrations | v2 | Non commencée | Hors périmètre v1 |
