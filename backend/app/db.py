@@ -112,6 +112,13 @@ class Base:
         self._cx.execute("PRAGMA journal_mode=WAL")
         self._cx.execute("PRAGMA foreign_keys=ON")
         self._cx.executescript(SCHEMA)
+        self._migrer()
+
+    def _migrer(self) -> None:
+        """Colonnes ajoutées après la première version du schéma."""
+        colonnes = {ligne["name"] for ligne in self._cx.execute("PRAGMA table_info(messages)")}
+        if "moteur" not in colonnes:
+            self._cx.execute("ALTER TABLE messages ADD COLUMN moteur TEXT")
 
     def executer(self, sql: str, params: tuple | list = ()) -> sqlite3.Cursor:
         with self._verrou:

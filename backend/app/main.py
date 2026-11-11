@@ -36,9 +36,11 @@ async def _controle_periodique(ctx) -> None:
             journal.exception("Contrôle périodique en échec")
 
 
-def creer_application(config: Config | None = None, moteur: Engine | None = None) -> FastAPI:
+def creer_application(
+    config: Config | None = None, moteur: Engine | None = None, moteur_secours: Engine | None = None
+) -> FastAPI:
     config = config or Config()
-    ctx = creer_contexte(config, moteur)
+    ctx = creer_contexte(config, moteur, moteur_secours)
 
     @contextlib.asynccontextmanager
     async def cycle(app: FastAPI):

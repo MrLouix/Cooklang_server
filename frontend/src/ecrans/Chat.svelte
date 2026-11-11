@@ -214,7 +214,7 @@
             <div class="encart danger" role="alert">{m.erreur_message}</div>
           {/if}
           <div class="pied secondaire">
-            <span>{dateCourte(m.cree_le)}{m.cout ? ' · ' + euros(m.cout) : ''}</span>
+            <span>{dateCourte(m.cree_le)}{m.cout ? ' · ' + euros(m.cout) : ''}{m.moteur === 'api' ? ' · via API' : ''}</span>
             {#if typeof m.id === 'number'}
               <button class="lien" onclick={() => dupliquer(m.id)}>Dupliquer à partir d'ici</button>
             {/if}

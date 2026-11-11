@@ -34,6 +34,13 @@ class Config:
     intervalle_controle: float = field(default_factory=lambda: float(_env("INTERVALLE_CONTROLE", "600")))
     git_auteur: str = field(default_factory=lambda: _env("GIT_AUTEUR", "Aide Culinaire"))
     git_courriel: str = field(default_factory=lambda: _env("GIT_COURRIEL", "aide-culinaire@localhost"))
+    # Moteur de secours : pris automatiquement quand le moteur principal signale un crédit épuisé.
+    moteur_secours: str = field(default_factory=lambda: _env("MOTEUR_SECOURS"))
+    secours_reessai_h: float = field(default_factory=lambda: float(_env("SECOURS_REESSAI_H", "6")))
+    cle_api_fichier: str = field(
+        default_factory=lambda: _env("CLE_API_FICHIER", "/run/secrets/anthropic_api_key")
+    )
+    api_effort: str = field(default_factory=lambda: _env("API_EFFORT"))
     claude_bin: str = field(default_factory=lambda: _env("CLAUDE_BIN", "claude"))
     jeton_fichier: str = field(default_factory=lambda: _env("JETON_FICHIER", "/run/secrets/claude_token"))
     front: Path = field(default_factory=lambda: Path(_env("FRONT", str(RACINE_CODE / "frontend" / "dist"))))

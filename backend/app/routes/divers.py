@@ -110,18 +110,25 @@ def relancer_synchro(ctx: Contexte = Depends(contexte)) -> dict:
 
 @routeur.get("/quota")
 def quota(ctx: Contexte = Depends(contexte)) -> dict:
+    """M-6 : coût cumulé du mois. Le crédit du CLI et la dépense du moteur API sont comptés à part."""
     mois = maintenant()[:7]
+    filtre = "role = 'assistant' AND cree_le LIKE ?"
     total = ctx.base.ligne(
-        "SELECT coalesce(sum(cout), 0) AS c, count(*) AS n FROM messages WHERE role = 'assistant' AND cree_le LIKE ?",
+        f"SELECT coalesce(sum(CASE WHEN moteur = 'api' THEN 0 ELSE cout END), 0) AS c, "
+        f"coalesce(sum(CASE WHEN moteur = 'api' THEN cout ELSE 0 END), 0) AS api, count(*) AS n FROM messages WHERE {filtre}",
         (f"{mois}%",),
     )
     historique = ctx.base.lignes(
         "SELECT substr(cree_le, 1, 7) AS mois, round(sum(cout), 4) AS cout, count(*) AS tours FROM messages "
         "WHERE role = 'assistant' GROUP BY 1 ORDER BY 1 DESC LIMIT 12"
     )
+    atteint = (ctx.base.meta("quota_atteint") or "")[:7] == mois
+    secours = ctx.moteur_secours
     return {
-        "mois": mois, "cout": round(total["c"], 4), "tours": total["n"], "credit": ctx.config.credit_mensuel,
-        "atteint": ctx.base.meta("quota_atteint") == mois, "historique": historique,
+        "mois": mois, "cout": round(total["c"], 4), "cout_api": round(total["api"], 4), "tours": total["n"],
+        "credit": ctx.config.credit_mensuel, "atteint": atteint, "historique": historique,
+        "moteur": ctx.moteur.nom, "secours": secours.nom if secours else None,
+        "secours_actif": bool(secours) and ctx.tours._moteur_du_tour() is secours,
     }  # fmt: skip
 
 
@@ -201,6 +208,7 @@ async def sante(ctx: Contexte = Depends(contexte)) -> dict:
         "etat": "ok",
         "moteur": ctx.moteur.nom,
         "cli": await ctx.moteur.version(),
+        "moteur_secours": ctx.moteur_secours.nom if ctx.moteur_secours else None,
         "git": _version("git", "--version"),
         "rclone": _version("rclone", "version"),
         "node": _version("node", "--version"),

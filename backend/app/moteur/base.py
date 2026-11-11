@@ -34,6 +34,10 @@ class Engine(Protocol):
 
     def run(self, demande: Demande) -> AsyncIterator[Evenement]: ...
 
+    def reconnait(self, session: str | None) -> bool:
+        """Vrai si l'identifiant de session a été émis par ce moteur."""
+        ...
+
     async def version(self) -> str: ...
 
 
@@ -54,5 +58,11 @@ MESSAGES_ERREUR = {
     "quota": "Le crédit mensuel du mode non interactif est épuisé. L'assistant sera de nouveau disponible au renouvellement du crédit.",
     "delai": "Le tour a dépassé le délai maximal et a été arrêté.",
     "moteur": "Le moteur a renvoyé une erreur.",
+    "authentification_api": "La clé API Anthropic est absente, invalide ou sans droit sur ce modèle.",
+    "credit_api": "Le solde du compte API Anthropic est insuffisant.",
+    "debit": "Limite de débit de l'API atteinte. Réessaie dans une minute.",
+    "surcharge": "L'API Anthropic est momentanément indisponible. Réessaie dans un instant.",
+    "reseau": "Connexion à l'API Anthropic impossible. Vérifie le réseau du serveur.",
+    "refus": "Le modèle a décliné cette demande (filtre de sécurité). Reformule ou change de modèle.",
     "interrompu": "Le serveur a redémarré pendant la génération de cette réponse.",
 }

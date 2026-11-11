@@ -1,8 +1,8 @@
 """Maquette du moteur (jalon 1) : vérifie le CLI réel et mesure le coût par tour.
 
-    uv run python -m scripts.maquette_moteur [--modele sonnet] [--racine /tmp/maquette]
+    uv run python -m scripts.maquette_moteur [--moteur claude|api] [--modele sonnet] [--racine /tmp/maquette]
 
-Consomme du crédit `claude -p` : quatre tours courts. À lancer une fois, après `claude setup-token`.
+Consomme du crédit (`claude -p`, ou la clé API avec `--moteur api`) : quatre tours courts. À lancer une fois, après `claude setup-token`.
 """
 
 from __future__ import annotations
@@ -15,9 +15,9 @@ from pathlib import Path
 
 from app import consignes
 from app.config import Config
+from app.contexte import creer_moteur
 from app.initialisation import initialiser
 from app.moteur.base import Demande
-from app.moteur.claude_cli import MoteurClaudeCLI
 from app.propositions import BLOC, analyser_bloc
 
 
@@ -52,6 +52,7 @@ async def principal() -> None:
     analyseur = argparse.ArgumentParser()
     analyseur.add_argument("--modele", default="sonnet")
     analyseur.add_argument("--racine", default=None)
+    analyseur.add_argument("--moteur", default="claude", choices=["claude", "api"], help="moteur à vérifier")
     args = analyseur.parse_args()
     racine = Path(args.racine or tempfile.mkdtemp(prefix="maquette-"))
     config = Config(racine=racine)
@@ -62,9 +63,9 @@ async def principal() -> None:
         "Recette d'essai",
     )
     (racine / "secret.txt").write_text("MOT-SECRET-42")
-    moteur = MoteurClaudeCLI(config)
+    moteur = creer_moteur(config, args.moteur)
     regles = consignes.composer(config)
-    print("CLI :", await moteur.version(), "| racine :", racine)
+    print("Moteur :", moteur.nom, "|", await moteur.version(), "| racine :", racine)
 
     r1 = await tour(
         moteur,

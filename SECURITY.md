@@ -6,7 +6,7 @@ Le serveur est conçu pour **un seul utilisateur, derrière un VPN** (Tailscale 
 
 Garde-fous en place :
 
-- Le LLM n'a ni shell ni outil d'écriture (`Write`, `Edit`, `Bash` retirés et refusés). Ses lectures sont bornées à `agent/` et `recettes/`.
+- Le LLM n'a ni shell ni outil d'écriture (`Write`, `Edit`, `Bash` retirés et refusés). Ses lectures sont bornées à `agent/` et `recettes/`, que le moteur soit le CLI ou l'API : avec l'API, c'est le serveur qui exécute les lectures et contrôle chaque chemin (liens symboliques et fichiers cachés compris).
 - Aucun fichier n'est écrit sans validation manuelle dans l'interface. Les chemins proposés sont contrôlés (pas de `..`, pas de fichier caché, extension imposée).
 - Le contenu des pages web lues par l'assistant est traité comme non fiable ; l'absence d'écriture et la validation manuelle bornent l'effet d'une injection d'instructions.
 - Le HTML rendu dans l'interface est assaini (DOMPurify).

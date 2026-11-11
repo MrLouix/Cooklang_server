@@ -72,6 +72,8 @@
 {:else}
   {#if !app.enLigne}
     <div class="bandeau alerte">Hors connexion — consultation seule, l'envoi est désactivé.</div>
+  {:else if quota?.secours_actif}
+    <div class="bandeau alerte">Crédit du moteur principal épuisé : les réponses passent par l'API, facturée à l'usage.</div>
   {:else if quota?.atteint}
     <div class="bandeau danger">Crédit mensuel épuisé : l'assistant est indisponible jusqu'au renouvellement.</div>
   {/if}

@@ -23,6 +23,7 @@ class Contexte:
     moteur: Engine
     recettes: Depot
     agent: Depot
+    moteur_secours: Engine | None = None
     parametres: Parametres = None
     references: References = None
     synchro: Synchro = None
@@ -30,8 +31,13 @@ class Contexte:
     tours: Gestionnaire = None
 
 
-def creer_moteur(config: Config) -> Engine:
-    if config.moteur == "factice":
+def creer_moteur(config: Config, nom: str | None = None) -> Engine:
+    nom = nom or config.moteur
+    if nom == "api":
+        from .moteur.api_anthropic import MoteurAPI
+
+        return MoteurAPI(config)
+    if nom == "factice":
         from .moteur.factice import MoteurFactice
 
         return MoteurFactice(delai=0.03)
@@ -40,12 +46,17 @@ def creer_moteur(config: Config) -> Engine:
     return MoteurClaudeCLI(config)
 
 
-def creer_contexte(config: Config, moteur: Engine | None = None) -> Contexte:
+def creer_contexte(
+    config: Config, moteur: Engine | None = None, moteur_secours: Engine | None = None
+) -> Contexte:
     recettes, agent = initialiser(config)
     base = Base(config.base)
     ctx = Contexte(
         config=config, base=base, moteur=moteur or creer_moteur(config), recettes=recettes, agent=agent
     )
+    if moteur_secours is None and config.moteur_secours and config.moteur_secours != config.moteur:
+        moteur_secours = creer_moteur(config, config.moteur_secours)
+    ctx.moteur_secours = moteur_secours
     ctx.parametres = Parametres(agent)
     ctx.parametres.initialiser()
     ctx.references = References(base, agent)

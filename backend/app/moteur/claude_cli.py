@@ -151,6 +151,10 @@ class MoteurClaudeCLI:
                     proc.kill()
                 await proc.wait()
 
+    @staticmethod
+    def reconnait(session: str | None) -> bool:
+        return bool(session) and not session.startswith("api-")
+
     async def version(self) -> str:
         try:
             proc = await asyncio.create_subprocess_exec(

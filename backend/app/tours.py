@@ -10,6 +10,7 @@ import logging
 import time
 import uuid
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime, timedelta
 
 from . import consignes
 from .db import decoder, maintenant
@@ -36,6 +37,7 @@ class Tour:
         self.abonnes: set[asyncio.Queue] = set()
         self.final: tuple[str, dict] | None = None
         self.debut = time.monotonic()
+        self.moteur = None
 
     def publier(self, genre: str, donnees: dict) -> None:
         if genre in ("fin", "erreur"):
@@ -202,12 +204,43 @@ class Gestionnaire:
             {nom: textes.get(nom, "") for nom in TRANSVERSAUX},
         )
 
-    async def _derouler(self, tour: Tour, demande: Demande) -> Evenement:
+    def _moteur_du_tour(self):
+        """Le moteur de secours reste en service quelques heures après un crédit épuisé, puis le principal est réessayé."""
+        secours, depuis = self.ctx.moteur_secours, self.ctx.base.meta("quota_atteint")
+        if secours and depuis:
+            try:
+                age = datetime.now(UTC) - datetime.strptime(depuis, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=UTC)
+            except ValueError:
+                return self.ctx.moteur
+            if age < timedelta(hours=self.ctx.config.secours_reessai_h):
+                return secours
+        return self.ctx.moteur
+
+    async def _tenter(self, tour: Tour, discussion: dict, moteur) -> Evenement:
+        """Un tour sur un moteur donné, avec reprise de session quand elle lui appartient (D-3, D-4)."""
+        base = self.ctx.base
+        # Une session émise par un autre moteur ne se reprend pas : l'historique en base est réinjecté.
+        session = discussion["session_claude"] if moteur.reconnait(discussion["session_claude"]) else None
+        demande = Demande(
+            message=self._composer_message(tour, discussion, avec_historique=session is None),
+            modele=discussion["modele"], session=session, consignes=self._consignes(discussion),
+        )  # fmt: skip
+        final = await self._derouler(tour, demande, moteur)
+        if final.type == "erreur" and final.code == "session_introuvable" and not tour.texte:
+            # D-4 : session perdue ou corrompue → nouvelle session, historique réinjecté, sans intervention.
+            base.executer("UPDATE discussions SET session_claude = NULL WHERE id = ?", (tour.discussion_id,))
+            demande = dataclasses.replace(
+                demande, session=None, message=self._composer_message(tour, discussion, avec_historique=True)
+            )
+            final = await self._derouler(tour, demande, moteur)
+        return final
+
+    async def _derouler(self, tour: Tour, demande: Demande, moteur) -> Evenement:
         """Exécute le moteur et renvoie l'événement terminal (fin ou erreur)."""
         base, dernier_enregistrement = self.ctx.base, time.monotonic()
         try:
             async with asyncio.timeout(self.ctx.config.delai_tour):
-                async with contextlib.aclosing(self.ctx.moteur.run(demande)) as flux:
+                async with contextlib.aclosing(moteur.run(demande)) as flux:
                     async for ev in flux:
                         if ev.type == "texte":
                             tour.texte += ev.texte
@@ -240,19 +273,23 @@ class Gestionnaire:
             return
         tour.debut = time.monotonic()
         tour.publier("debut", {})
-        session = discussion["session_claude"]
-        demande = Demande(
-            message=self._composer_message(tour, discussion, avec_historique=session is None),
-            modele=discussion["modele"], session=session, consignes=self._consignes(discussion),
-        )  # fmt: skip
-        final = await self._derouler(tour, demande)
-        if final.type == "erreur" and final.code == "session_introuvable" and not tour.texte:
-            # D-4 : session perdue ou corrompue → nouvelle session, historique réinjecté, sans intervention.
-            base.executer("UPDATE discussions SET session_claude = NULL WHERE id = ?", (tour.discussion_id,))
-            demande = dataclasses.replace(
-                demande, session=None, message=self._composer_message(tour, discussion, avec_historique=True)
-            )
-            final = await self._derouler(tour, demande)
+        moteur = self._moteur_du_tour()
+        final = await self._tenter(tour, discussion, moteur)
+        secours = self.ctx.moteur_secours
+        if (
+            final.type == "erreur"
+            and final.code == "quota"
+            and secours
+            and moteur is not secours
+            and not tour.texte
+        ):
+            # Crédit du moteur principal épuisé : on bascule sur le moteur de secours, sans intervention.
+            base.definir_meta("quota_atteint", maintenant())
+            journal.warning("Crédit épuisé sur le moteur %s : bascule sur %s", moteur.nom, secours.nom)
+            moteur = secours
+            final = await self._tenter(tour, discussion, moteur)
+        tour.moteur = moteur
+        base.executer("UPDATE messages SET moteur = ? WHERE id = ?", (moteur.nom, tour.message_id))
         if final.type == "erreur":
             self._echec(tour, final)
             return
@@ -297,7 +334,7 @@ class Gestionnaire:
         titre, cout = "", 0.0
         try:
             async with asyncio.timeout(45):
-                async with contextlib.aclosing(self.ctx.moteur.run(demande)) as flux:
+                async with contextlib.aclosing(tour.moteur.run(demande)) as flux:
                     async for ev in flux:
                         if ev.type == "texte":
                             titre += ev.texte
@@ -321,7 +358,7 @@ class Gestionnaire:
              int((time.monotonic() - tour.debut) * 1000), tour.message_id),
         )  # fmt: skip
         if ev.code == "quota":
-            base.definir_meta("quota_atteint", maintenant()[:7])
+            base.definir_meta("quota_atteint", maintenant())
         journal.warning("Tour %s : erreur %s (%s)", tour.message_id, ev.code, ev.texte[:300])
         tour.publier("erreur", {
             "code": ev.code or "moteur",

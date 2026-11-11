@@ -104,5 +104,9 @@ class MoteurFactice:
             yield Evenement("texte", texte=texte[i : i + 40])
         yield Evenement("fin", session=session, cout=0.0123)
 
+    @staticmethod
+    def reconnait(session: str | None) -> bool:
+        return bool(session) and not session.startswith("api-")
+
     async def version(self) -> str:
         return "factice"

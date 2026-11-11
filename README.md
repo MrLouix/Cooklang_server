@@ -5,7 +5,7 @@
 
 Un assistant pâtissier qui analyse tes recettes, propose des corrections chiffrées, puis écrit des fichiers [Cooklang](https://cooklang.org) (`.cook`) **après ton accord**. Les recettes sont versionnées dans Git, poussées vers GitHub et recopiées vers Google Drive pour l'appli Cook du téléphone.
 
-Le moteur est le CLI Claude Code (`claude -p`) : pas de clé API, l'abonnement suffit. Le LLM n'a ni shell ni droit d'écriture ; toute écriture passe par l'API, sur validation.
+Le moteur est le CLI Claude Code (`claude -p`) : pas de clé API, l'abonnement suffit. Un moteur de secours par clé API Anthropic peut prendre le relais automatiquement quand le crédit du CLI est épuisé. Le LLM n'a ni shell ni droit d'écriture ; toute écriture passe par l'API, sur validation.
 
 - Spécification : [`docs/specification-serveur-aide-culinaire.md`](docs/specification-serveur-aide-culinaire.md)
 - Plan de codage : [`docs/plan-de-codage.md`](docs/plan-de-codage.md)
@@ -68,7 +68,11 @@ Variables d'environnement, toutes préfixées `AC_` (modèle : [`deploiement/.en
 | Variable | Défaut | Rôle |
 | --- | --- | --- |
 | `AC_RACINE` | `/srv/aide-culinaire` | Dossier des données : `recettes/`, `agent/`, `data/` |
-| `AC_MOTEUR` | `claude` | `claude` (CLI réel) ou `factice` (démonstration, tests) |
+| `AC_MOTEUR` | `claude` | `claude` (CLI réel, abonnement), `api` (clé API Anthropic, facturée à l'usage) ou `factice` (démonstration, tests) |
+| `AC_MOTEUR_SECOURS` | vide | Moteur pris automatiquement quand le principal signale un crédit épuisé ; en pratique `api` |
+| `AC_SECOURS_REESSAI_H` | `6` | Durée pendant laquelle le secours reste en service avant de réessayer le moteur principal, en heures |
+| `AC_CLE_API_FICHIER` | `/run/secrets/anthropic_api_key` | Fichier de la clé API ; à défaut, `ANTHROPIC_API_KEY` |
+| `AC_API_EFFORT` | vide | Niveau d'effort du moteur API (`low` à `max`) ; vide = défaut du modèle |
 | `AC_MODELE_DEFAUT` | `sonnet` | Modèle des nouvelles discussions |
 | `AC_DELAI_TOUR` | `300` | Délai maximal d'un tour, en secondes |
 | `AC_CREDIT_MENSUEL` | `20` | Plafond affiché dans Système, en dollars |

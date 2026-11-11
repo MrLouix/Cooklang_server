@@ -83,6 +83,16 @@
             Coût estimé renvoyé par le CLI, cumulé par mois. Le plafond affiché est une valeur de configuration, à ajuster au crédit réel du
             compte.
           </p>
+          {#if quota.secours || quota.cout_api > 0}
+            <div class="rangee">
+              <strong>{euros(quota.cout_api)}</strong><span class="secondaire"
+                >via l'API ce mois-ci, facturés à l'usage (hors crédit ci-dessus)</span
+              >
+            </div>
+          {/if}
+          {#if quota.secours_actif}<div class="encart alerte">
+              Moteur de secours en service : le moteur principal sera réessayé automatiquement.
+            </div>{/if}
           {#if quota.atteint}<div class="encart danger">Le CLI a signalé un crédit épuisé ce mois-ci.</div>{/if}
           {#if quota.historique.length > 1}
             <ul class="liste secondaire">
@@ -100,7 +110,9 @@
           <dl>
             <dt>Moteur</dt>
             <dd>{sante.moteur}{sante.moteur === 'factice' ? ' (démonstration, aucune réponse réelle)' : ''}</dd>
-            <dt>CLI Claude</dt>
+            <dt>Moteur de secours</dt>
+            <dd>{sante.moteur_secours ?? 'aucun'}</dd>
+            <dt>Version</dt>
             <dd>{sante.cli}</dd>
             <dt>Modèle par défaut</dt>
             <dd>{sante.modele_defaut}</dd>
