@@ -1,6 +1,6 @@
 # Image du serveur Aide Culinaire. Construction depuis la racine du dépôt :
 #   docker compose -f deploiement/compose.yaml build
-FROM node:22-bookworm-slim AS pwa
+FROM node:26-bookworm-slim AS pwa
 WORKDIR /src/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
